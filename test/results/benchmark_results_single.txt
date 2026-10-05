@@ -1,0 +1,408 @@
+========================================================================================================================
+                      LDS AUTOMATED SINGLE-LINE STREAMING BENCHMARK REPORT
+========================================================================================================================
+Generated At        : 2026-10-05 17:53:21
+Compression Engine  : LDS (Log Data Stream) Native C Micro-Engine with Separate Timers
+RAM Budget Ceiling  : ~166 KB (Strict Constant Memory Guarantee - Zero Unbounded Heap Growth)
+Execution Mode      : Line-by-Line Online Streaming (Exact Edge-to-Cloud Simulation)
+Line Limit Mode     : FULL DATASET (All Lines)
+Host Platform       : win32 (x64) | Node v24.14.1
+========================================================================================================================
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 1/13] logs.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\logs.txt
+Original File Size       : 303.76 KB (3,11,050 bytes)
+Lines Evaluated          : 2,140 lines
+Decompressed Raw Volume  : 299.58 KB (3,06,772 bytes)
+Compressed Wire Volume   : 21.20 KB (21,708 bytes)
+Overall Compression Ratio: 14.13x smaller
+Bandwidth Saved          : 92.92% network traffic reduction
+Encode Speed             : 53,386 lines/second (7.30 MB/second)
+Decode Speed             : 58,690 lines/second (8.02 MB/second)
+Round-Trip Speed         : 26,796 lines/second (3.66 MB/second)
+Pure Encode Time         : 0.0401 seconds
+Pure Decode Time         : 0.0365 seconds
+Total Processing Time    : 0.0799 seconds
+C Engine Peak RAM        : ~7236 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 62.50x (98.40% saved) [Raw: 125B -> Wire: 2B]
+  Log Message            : "081109 203529 164 INFO dfs.DataNode$DataXceiver: 10.251.39.179:50010 Served block blk_-3544583377289625738 to /10.251.194.245"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 1.17x (14.74% saved) [Raw: 95B -> Wire: 81B]
+  Log Message            : "081109 203552 13 INFO dfs.DataBlockScanner: Verification succeeded for blk_-9073992586687739851"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 2/13] automotive_telematics_10k.log
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\automotive_telematics_10k.log
+Original File Size       : 1.13 MB (11,84,848 bytes)
+Lines Evaluated          : 10,000 lines
+Decompressed Raw Volume  : 1.12 MB (11,74,848 bytes)
+Compressed Wire Volume   : 160.24 KB (1,64,081 bytes)
+Overall Compression Ratio: 7.16x smaller
+Bandwidth Saved          : 86.03% network traffic reduction
+Encode Speed             : 14,461 lines/second (1.62 MB/second)
+Decode Speed             : 13,230 lines/second (1.48 MB/second)
+Round-Trip Speed         : 6,850 lines/second (0.77 MB/second)
+Pure Encode Time         : 0.6915 seconds
+Pure Decode Time         : 0.7559 seconds
+Total Processing Time    : 1.4599 seconds
+C Engine Peak RAM        : ~8628 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 42.00x (97.62% saved) [Raw: 126B -> Wire: 3B]
+  Log Message            : "2026-10-05 02:15:36.090 INFO BMS [BMS_CONTACTOR] hv_positive=CLOSED hv_negative=CLOSED precharge=COMPLETE pack_voltage=386.42V"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.78x (-28.71% saved) [Raw: 101B -> Wire: 130B]
+  Log Message            : "2026-10-05 02:04:58.990 WARN DIAG [BMS_MAIN] DTC=P0A80 status=PENDING occurrence=1 snapshot=available"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 3/13] Linux.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\Linux.txt
+Original File Size       : 2.24 MB (23,49,686 bytes)
+Lines Evaluated          : 25,567 lines
+Decompressed Raw Volume  : 2.22 MB (23,24,119 bytes)
+Compressed Wire Volume   : 248.54 KB (2,54,508 bytes)
+Overall Compression Ratio: 9.13x smaller
+Bandwidth Saved          : 89.05% network traffic reduction
+Encode Speed             : 46,642 lines/second (4.04 MB/second)
+Decode Speed             : 44,859 lines/second (3.89 MB/second)
+Round-Trip Speed         : 22,425 lines/second (1.94 MB/second)
+Pure Encode Time         : 0.5482 seconds
+Pure Decode Time         : 0.5699 seconds
+Total Processing Time    : 1.1401 seconds
+C Engine Peak RAM        : ~11136 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 515.00x (99.81% saved) [Raw: 1030B -> Wire: 2B]
+  Log Message            : "Jun 13 11:55:09 combo rpc.statd[1636]: gethostbyname error for ^X���^X���^Z���^Z���%8x%8x%8x%8x%8x%8x%8x%8x%8x%62716x%hn%51859x%hn\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.67x (-50.00% saved) [Raw: 30B -> Wire: 45B]
+  Log Message            : "Sep 28 09:08:52 combo squid: ."
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 4/13] Apache.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\Apache.txt
+Original File Size       : 4.90 MB (51,35,876 bytes)
+Lines Evaluated          : 56,482 lines
+Decompressed Raw Volume  : 4.84 MB (50,79,395 bytes)
+Compressed Wire Volume   : 246.30 KB (2,52,213 bytes)
+Overall Compression Ratio: 20.14x smaller
+Bandwidth Saved          : 95.03% network traffic reduction
+Encode Speed             : 1,28,952 lines/second (11.06 MB/second)
+Decode Speed             : 44,710 lines/second (3.83 MB/second)
+Round-Trip Speed         : 32,319 lines/second (2.77 MB/second)
+Pure Encode Time         : 0.4380 seconds
+Pure Decode Time         : 1.2633 seconds
+Total Processing Time    : 1.7476 seconds
+C Engine Peak RAM        : ~8268 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 91.00x (98.90% saved) [Raw: 91B -> Wire: 1B]
+  Log Message            : "[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.83x (-21.05% saved) [Raw: 57B -> Wire: 69B]
+  Log Message            : "[Wed Aug 03 07:00:14 2005] [error] mod_jk child init 1 -2"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 5/13] Zookeeper.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\Zookeeper.txt
+Original File Size       : 9.94 MB (1,04,26,438 bytes)
+Lines Evaluated          : 74,380 lines
+Decompressed Raw Volume  : 9.80 MB (1,02,77,678 bytes)
+Compressed Wire Volume   : 422.18 KB (4,32,308 bytes)
+Overall Compression Ratio: 23.77x smaller
+Bandwidth Saved          : 95.79% network traffic reduction
+Encode Speed             : 76,432 lines/second (10.07 MB/second)
+Decode Speed             : 38,781 lines/second (5.11 MB/second)
+Round-Trip Speed         : 25,041 lines/second (3.30 MB/second)
+Pure Encode Time         : 0.9732 seconds
+Pure Decode Time         : 1.9180 seconds
+Total Processing Time    : 2.9703 seconds
+C Engine Peak RAM        : ~7356 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 218.00x (99.54% saved) [Raw: 218B -> Wire: 1B]
+  Log Message            : "2015-07-30 17:56:01,043 - INFO  [WorkerReceiver[myid=2]:FastLeaderElection@542] - Notification: 1 (n.leader), 0x100001564 (n.zxid), 0x3 (n.round), FOLLOWING (n.state), 2 (n.sid), 0x2 (n.peerEPoch), FOLLOWING (my state)"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.90x (-10.64% saved) [Raw: 94B -> Wire: 104B]
+  Log Message            : "2015-07-29 19:54:21,146 - ERROR [CommitProcessor:1:NIOServerCnxn@180] - Unexpected Exception: "
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 6/13] HealthApp.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\HealthApp.txt
+Original File Size       : 22.44 MB (2,35,29,930 bytes)
+Lines Evaluated          : 2,53,394 lines
+Decompressed Raw Volume  : 21.96 MB (2,30,22,931 bytes)
+Compressed Wire Volume   : 2.23 MB (23,34,473 bytes)
+Overall Compression Ratio: 9.86x smaller
+Bandwidth Saved          : 89.86% network traffic reduction
+Encode Speed             : 88,435 lines/second (7.66 MB/second)
+Decode Speed             : 1,91,246 lines/second (16.57 MB/second)
+Round-Trip Speed         : 58,205 lines/second (5.04 MB/second)
+Pure Encode Time         : 2.8653 seconds
+Pure Decode Time         : 1.3250 seconds
+Total Processing Time    : 4.3535 seconds
+C Engine Peak RAM        : ~7548 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 115.00x (99.13% saved) [Raw: 115B -> Wire: 1B]
+  Log Message            : "20171224-15:32:58:357|Step_CounterSupport|30002312|supportPrivateStandStepcounter=true,supportStandStepCounter=true"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 1.06x (5.33% saved) [Raw: 75B -> Wire: 71B]
+  Log Message            : "20171223-22:19:58:424|HiH_|30002312|initDataPrivacy the dataPrivacy is true"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 7/13] HPC.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\HPC.txt
+Original File Size       : 32.00 MB (3,35,53,503 bytes)
+Lines Evaluated          : 4,33,490 lines
+Decompressed Raw Volume  : 31.17 MB (3,26,86,525 bytes)
+Compressed Wire Volume   : 1.63 MB (17,13,007 bytes)
+Overall Compression Ratio: 19.08x smaller
+Bandwidth Saved          : 94.76% network traffic reduction
+Encode Speed             : 1,06,239 lines/second (7.64 MB/second)
+Decode Speed             : 2,69,955 lines/second (19.41 MB/second)
+Round-Trip Speed         : 72,446 lines/second (5.21 MB/second)
+Pure Encode Time         : 4.0803 seconds
+Pure Decode Time         : 1.6058 seconds
+Total Processing Time    : 5.9836 seconds
+C Engine Peak RAM        : ~9040 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 113.00x (99.12% saved) [Raw: 113B -> Wire: 1B]
+  Log Message            : "463312 resourcemgmtdaeomon node-25 server subsys 1145553567 1 failed to configure resourcemgmt subsystem err = 10"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.66x (-52.27% saved) [Raw: 44B -> Wire: 67B]
+  Log Message            : "91065 gige4 gige temperature 15.560 1 normal"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 8/13] openstack_normal2.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\openstack_normal2.txt
+Original File Size       : 38.63 MB (4,05,06,365 bytes)
+Lines Evaluated          : 1,37,074 lines
+Decompressed Raw Volume  : 38.50 MB (4,03,69,291 bytes)
+Compressed Wire Volume   : 2.39 MB (25,08,756 bytes)
+Overall Compression Ratio: 16.09x smaller
+Bandwidth Saved          : 93.79% network traffic reduction
+Encode Speed             : 1,08,834 lines/second (30.57 MB/second)
+Decode Speed             : 32,707 lines/second (9.19 MB/second)
+Round-Trip Speed         : 24,343 lines/second (6.84 MB/second)
+Pure Encode Time         : 1.2595 seconds
+Pure Decode Time         : 4.1909 seconds
+Total Processing Time    : 5.6310 seconds
+C Engine Peak RAM        : ~8104 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 175.50x (99.43% saved) [Raw: 351B -> Wire: 2B]
+  Log Message            : "nova-compute.log.1.2017-05-17_12:02:35 2017-05-16 15:41:25.147 2931 INFO nova.virt.libvirt.imagecache [req-addc1839-2ed5-4778-b57e-5854eb7b8b09 - - - - -] image 0673dd71-34c5-4fbb-86c4-40623fbe45b4 at (/var/lib/nova/instances/_base/a489c868f0c37da93b76227c91bb03908ac0e742): in use: on this node 1 local, 0 on other nodes sharing this instance storage"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 1.06x (5.75% saved) [Raw: 261B -> Wire: 246B]
+  Log Message            : "nova-api.log.1.2017-05-17_12:02:19 2017-05-17 06:25:03.044 25749 ERROR keystonemiddleware.auth_token [req-abcdb287-429c-40a5-8e79-d490d4fb7410 113d3a99c3da401fbd62cc2caa5b96d2 54fadb412c4e40cdbaed9335e4c35a9e - - -] Bad response code while validating token: 503"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 9/13] SSH.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\SSH.txt
+Original File Size       : 70.02 MB (7,34,17,506 bytes)
+Lines Evaluated          : 6,55,147 lines
+Decompressed Raw Volume  : 68.77 MB (7,21,07,214 bytes)
+Compressed Wire Volume   : 3.34 MB (34,98,174 bytes)
+Overall Compression Ratio: 20.61x smaller
+Bandwidth Saved          : 95.15% network traffic reduction
+Encode Speed             : 93,043 lines/second (9.77 MB/second)
+Decode Speed             : 60,586 lines/second (6.36 MB/second)
+Round-Trip Speed         : 35,846 lines/second (3.76 MB/second)
+Pure Encode Time         : 7.0414 seconds
+Pure Decode Time         : 10.8136 seconds
+Total Processing Time    : 18.2766 seconds
+C Engine Peak RAM        : ~7500 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 145.00x (99.31% saved) [Raw: 145B -> Wire: 1B]
+  Log Message            : "Dec 17 14:03:09 LabSZ sshd[4213]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=121.5.23.175  user=root"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.89x (-12.66% saved) [Raw: 79B -> Wire: 89B]
+  Log Message            : "Jan  1 00:12:43 LabSZ sshd[3117]: PAM service(sshd) ignoring max retries; 6 > 3"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 10/13] Android.log
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\Android.log
+Original File Size       : 183.36 MB (19,22,70,829 bytes)
+Lines Evaluated          : 15,55,005 lines
+Decompressed Raw Volume  : 180.40 MB (18,91,60,819 bytes)
+Compressed Wire Volume   : 25.47 MB (2,67,12,077 bytes)
+Overall Compression Ratio: 7.08x smaller
+Bandwidth Saved          : 85.88% network traffic reduction
+Encode Speed             : 58,941 lines/second (6.84 MB/second)
+Decode Speed             : 56,018 lines/second (6.50 MB/second)
+Round-Trip Speed         : 28,165 lines/second (3.27 MB/second)
+Pure Encode Time         : 26.3823 seconds
+Pure Decode Time         : 27.7590 seconds
+Total Processing Time    : 55.2105 seconds
+C Engine Peak RAM        : ~8796 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 616.00x (99.84% saved) [Raw: 1232B -> Wire: 2B]
+  Log Message            : "12-17 21:23:04.620 24266 24266 I DownloadEpisodeAdapter: [qiyi_LOG_INFO DownloadEpisodeAdapter] setUnFinishedText:DownloadObject{albumId='203364601', tvId='578148800', res_type=4, _id=36, vid='c57cdf5ffebfa231ab4969e26bb611a8', fileName='203364601_578148800.qsv', downloadFileDir='/storage/emulated/0/Android/data/com.qiyi.video/files/203364601_578148800/', imgUrl='http://m.qiyipic.com/image/20161202/46/2a/v_111400796_m_601_320_180.jpg', text='锦绣未央第41集', subTitle='未央推测常茹是真凶', DOWNLOAD_KEY='203364601_578148800', downloadWay=8, downloadRequestUrl='', displayType=TV_TYPE, fileSize=131059802, progress=100.0, status=FINISHED, clicked=0, videoDuration=2743, clm='锦绣未央', _a_t='锦绣未央', episode=41, year='2016', playRc=-1, taskStatus=2, mNeedDel=0, isDownloadPlay=true, speed=0, errorCode='', downloadTime=0, _pc=0, auto=0, cid=0, fDownloadRequestUrl='http://pic2.qiyipic.com/image/20161211/9a/b4/a_100018961_m_601_m3_284_160.jpg', downloadSource=DOWNLOAD_DEFAULT, f4vJsonUrl='http://cache.video.qiyi.com/vp/578148800/c57cdf5ffebfa231ab4969e26bb611a8/?src=2_22_222&t=1481879765037&vf=6c5cdde9c486cd8306e30a923c067d16&vt=1', f4vSections=null, svrip='null', segidx='null', accelerate_speed0'}"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.81x (-23.73% saved) [Raw: 59B -> Wire: 73B]
+  Log Message            : "12-17 19:31:36.339 31949 31985 I PushService: connect :true"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 11/13] BGL.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\BGL.txt
+Original File Size       : 708.76 MB (74,31,85,030 bytes)
+Lines Evaluated          : 47,47,963 lines
+Decompressed Raw Volume  : 704.23 MB (73,84,36,500 bytes)
+Compressed Wire Volume   : 32.39 MB (3,39,66,545 bytes)
+Overall Compression Ratio: 21.74x smaller
+Bandwidth Saved          : 95.40% network traffic reduction
+Encode Speed             : 54,155 lines/second (8.03 MB/second)
+Decode Speed             : 27,592 lines/second (4.09 MB/second)
+Round-Trip Speed         : 18,020 lines/second (2.67 MB/second)
+Pure Encode Time         : 87.6737 seconds
+Pure Decode Time         : 172.0782 seconds
+Total Processing Time    : 263.4861 seconds
+C Engine Peak RAM        : ~13172 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 262.67x (99.62% saved) [Raw: 788B -> Wire: 3B]
+  Log Message            : "- 1132329485 2005.11.18 R02-M1-S 2005-11-18-07.58.05.825572 R02-M1-S NULL MONITOR FAILURE While reading FanModule caught java.lang.IllegalStateException: while executing I2C Operation caught java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.lang.IllegalStateException: client not in a usable state because java.net.SocketException: Broken pipe"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.84x (-18.94% saved) [Raw: 132B -> Wire: 157B]
+  Log Message            : "KERNNOETH 1120242223 2005.07.01 R06-M0-N8-I:J18-U01 2005-07-01-11.23.43.835964 R06-M0-N8-I:J18-U01 RAS KERNEL FATAL no ethernet link"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 12/13] HDFS.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\HDFS.txt
+Original File Size       : 1.47 GB (1,57,79,82,904 bytes)
+Lines Evaluated          : 1,11,75,629 lines
+Decompressed Raw Volume  : 1.45 GB (1,55,56,31,648 bytes)
+Compressed Wire Volume   : 127.63 MB (13,38,34,339 bytes)
+Overall Compression Ratio: 11.62x smaller
+Bandwidth Saved          : 91.40% network traffic reduction
+Encode Speed             : 68,391 lines/second (9.08 MB/second)
+Decode Speed             : 72,574 lines/second (9.63 MB/second)
+Round-Trip Speed         : 34,320 lines/second (4.56 MB/second)
+Pure Encode Time         : 163.4072 seconds
+Pure Decode Time         : 153.9886 seconds
+Total Processing Time    : 325.6340 seconds
+C Engine Peak RAM        : ~8792 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 88.00x (98.86% saved) [Raw: 176B -> Wire: 2B]
+  Log Message            : "081110 142530 35 INFO dfs.FSNamesystem: BLOCK* NameSystem.allocateBlock: /user/root/sortrand2/_temporary/_task_200811101024_0003_r_000358_0/part-00358. blk_-7093713389533435732"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.94x (-6.72% saved) [Raw: 134B -> Wire: 143B]
+  Log Message            : "081109 213809 32 INFO dfs.FSNamesystem: BLOCK* NameSystem.delete: blk_-1608999687919862906 is added to invalidSet of 10.250.10.6:50010"
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+[DATASET 13/13] Spark.txt
+------------------------------------------------------------------------------------------------------------------------
+Source File Path         : E:\Projects-placement\LDS\logsdataset\Spark.txt
+Original File Size       : 2.74 GB (2,94,15,59,428 bytes)
+Lines Evaluated          : 3,32,40,456 lines
+Decompressed Raw Volume  : 2.68 GB (2,87,50,78,516 bytes)
+Compressed Wire Volume   : 276.55 MB (28,99,84,820 bytes)
+Overall Compression Ratio: 9.91x smaller
+Bandwidth Saved          : 89.91% network traffic reduction
+Encode Speed             : 79,331 lines/second (6.54 MB/second)
+Decode Speed             : 52,251 lines/second (4.31 MB/second)
+Round-Trip Speed         : 30,969 lines/second (2.55 MB/second)
+Pure Encode Time         : 419.0108 seconds
+Pure Decode Time         : 636.1752 seconds
+Total Processing Time    : 1073.3421 seconds
+C Engine Peak RAM        : ~15084 KB
+Integrity Verification   : 100% BIT-EXACT MATCH (VERIFIED OK)
+
+HIGHEST COMPRESSION ACHIEVED IN THIS DATASET:
+  Compression Factor     : 441.00x (99.77% saved) [Raw: 882B -> Wire: 2B]
+  Log Message            : "    CLASSPATH -> {{PWD}}<CPS>{{PWD}}/__spark__.jar<CPS>$HADOOP_CONF_DIR<CPS>$HADOOP_COMMON_HOME/share/hadoop/common/*<CPS>$HADOOP_COMMON_HOME/share/hadoop/common/lib/*<CPS>$HADOOP_HDFS_HOME/share/hadoop/hdfs/*<CPS>$HADOOP_HDFS_HOME/share/hadoop/hdfs/lib/*<CPS>$HADOOP_YARN_HOME/share/hadoop/yarn/*<CPS>$HADOOP_YARN_HOME/share/hadoop/yarn/lib/*<CPS>$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*<CPS>$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/lib/*<CPS>/usr/local/hadoop/etc/hadoop:/usr/local/hadoop/share/hadoop/common/lib/*:/usr/local/hadoop/share/hadoop/common/*:/usr/local/hadoop/share/hadoop/hdfs:/usr/local/hadoop/share/hadoop/hdfs/lib/*:/usr/local/hadoop/share/hadoop/hdfs/*:/usr/local/hadoop/share/hadoop/yarn/lib/*:/usr/local/hadoop/share/hadoop/yarn/*:/usr/local/hadoop/share/hadoop/mapreduce/lib/*:/usr/local/hadoop/share/hadoop/mapreduce/*:/contrib/capacity-scheduler/*.jar"
+
+LOWEST COMPRESSION (COLD-START / WORST-CASE):
+  Compression Factor     : 0.20x (-400.00% saved) [Raw: 1B -> Wire: 5B]
+  Log Message            : ")"
+------------------------------------------------------------------------------------------------------------------------
+
+========================================================================================================================
+                                         MASTER DATASET COMPARISON SUMMARY TABLE
+========================================================================================================================
+| Dataset Name             |    Lines | Raw Volume | Wire Volume| Ratio(X) | Savings(%)| Encode(l/s) | Decode(l/s) | Roundtrip   | Status |
+|--------------------------|----------|------------|------------|----------|-----------|-------------|-------------|-------------|--------|
+| logs.txt                 |    2,140 |  299.58 KB |   21.20 KB |   14.13x |     92.9% |       53,386 |       58,690 |       26,796 |   PASS |
+| automotive_telematics_10 |   10,000 |    1.12 MB |  160.24 KB |    7.16x |     86.0% |       14,461 |       13,230 |        6,850 |   PASS |
+| Linux.txt                |   25,567 |    2.22 MB |  248.54 KB |    9.13x |     89.0% |       46,642 |       44,859 |       22,425 |   PASS |
+| Apache.txt               |   56,482 |    4.84 MB |  246.30 KB |   20.14x |     95.0% |     1,28,952 |       44,710 |       32,319 |   PASS |
+| Zookeeper.txt            |   74,380 |    9.80 MB |  422.18 KB |   23.77x |     95.8% |       76,432 |       38,781 |       25,041 |   PASS |
+| HealthApp.txt            | 2,53,394 |   21.96 MB |    2.23 MB |    9.86x |     89.9% |       88,435 |     1,91,246 |       58,205 |   PASS |
+| HPC.txt                  | 4,33,490 |   31.17 MB |    1.63 MB |   19.08x |     94.8% |     1,06,239 |     2,69,955 |       72,446 |   PASS |
+| openstack_normal2.txt    | 1,37,074 |   38.50 MB |    2.39 MB |   16.09x |     93.8% |     1,08,834 |       32,707 |       24,343 |   PASS |
+| SSH.txt                  | 6,55,147 |   68.77 MB |    3.34 MB |   20.61x |     95.2% |       93,043 |       60,586 |       35,846 |   PASS |
+| Android.log              | 15,55,005 |  180.40 MB |   25.47 MB |    7.08x |     85.9% |       58,941 |       56,018 |       28,165 |   PASS |
+| BGL.txt                  | 47,47,963 |  704.23 MB |   32.39 MB |   21.74x |     95.4% |       54,155 |       27,592 |       18,020 |   PASS |
+| HDFS.txt                 | 1,11,75,629 |    1.45 GB |  127.63 MB |   11.62x |     91.4% |       68,391 |       72,574 |       34,320 |   PASS |
+| Spark.txt                | 3,32,40,456 |    2.68 GB |  276.55 MB |    9.91x |     89.9% |       79,331 |       52,251 |       30,969 |   PASS |
+|--------------------------|----------|------------|------------|----------|-----------|-------------|-------------|-------------|--------|
+| TOTALS / WEIGHTED AVERAGE| 5,23,66,727 |    5.16 GB |  472.71 MB |   11.19x |    91.06% |       73,301 |       51,721 |       29,765 | ALL PASS |
+========================================================================================================================
+
+BENCHMARK THROUGHPUT HIGHLIGHTS:
+  1. Total Lines Evaluated    : 5,23,66,727 log entries
+  2. Total Raw Volume         : 5.16 GB (5,54,56,56,256 bytes)
+  3. Total Compressed Wire    : 472.71 MB (49,56,77,009 bytes)
+  4. Overall Compression Ratio: 11.19x smaller (91.06% bandwidth saved)
+  5. Pure Encoding Throughput : 73,301 lines/sec (~7.40 MB/sec)
+  6. Pure Decoding Throughput : 51,721 lines/sec (~5.22 MB/sec)
+  7. Full Round-Trip Speed    : 29,765 lines/sec (~3.01 MB/sec)
+  8. Data Integrity Check     : 100.0% Bit-Exact Match Across All Evaluated Lines
+  9. Memory Ceiling Guarantee : Strict ~166 KB constant RAM (zero leaks)
+========================================================================================================================

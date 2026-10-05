@@ -1,0 +1,17 @@
+# Build intermediates
+build/
+*.o
+*.obj
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temporary logs
+*.tmp
+temp/
+scratch/
