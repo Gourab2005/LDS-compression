@@ -13,7 +13,8 @@ function findEnginePath() {
     const candidates = [
         path.join(__dirname, '..', '..', '..', 'bin', 'lds_encoder_engine.exe'),
         path.join(__dirname, '..', '..', '..', 'bin', 'lds_encoder_engine'),
-        path.join(__dirname, '..', 'public_html', 'downloads', 'lds_encoder_engine.exe')
+        path.join(__dirname, '..', '..', '..', 'docs', 'downloads', 'lds_encoder_engine.exe'),
+        path.join(__dirname, '..', '..', '..', 'docs', 'downloads', 'lds_encoder_engine')
     ];
     for (const c of candidates) {
         if (require('fs').existsSync(c)) return c;

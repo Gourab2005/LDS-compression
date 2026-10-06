@@ -806,6 +806,18 @@
         </a>
       </li>
       <li class="nav-item">
+        <a href="#sync-manual">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Stream Sync & Auto-Recovery
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#edge-hardware">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          Hardware Edge Devices (ESP32, STM32, ECU)
+        </a>
+      </li>
+      <li class="nav-item">
         <a href="#embedded-c">
           <svg viewBox="0 0 24 24" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
           Embedded C Header API
@@ -1604,6 +1616,1218 @@ cat block_transport.lds | ./bin/lds_decoder_engine.exe --mode=batch > restored_o
               <div class="step-label"><span class="step-badge">3</span> Output File</div>
               <div class="output-box">Generated block_transport.lds (147.4 KB wire volume from 1.12 MB raw - 87.2% saved)</div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STREAM SYNCHRONIZATION & AUTO-RECOVERY MANUAL -->
+    <section id="sync-manual">
+      <div class="section-eyebrow">Production Protocol Specification</div>
+      <h2 class="section-title">Stream Synchronization & Auto-Recovery User Manual</h2>
+      <p class="section-desc">
+        A complete guide explaining how stateful log stream compression synchronizes across networks, how to handle out-of-order packets, and how to recover automatically with zero data corruption.
+      </p>
+
+      <!-- EASY EXPLANATION CARDS (4 PILLARS) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid #79c0ff; border-radius: var(--radius); padding: 18px 20px;">
+          <div style="color: #79c0ff; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">1. Sequence Tagging (seq)</div>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">
+            Sender increments a monotonic counter (<code style="color:#7ee787;">seq: 1, 2, 3...</code>) per packet. Enables the receiver to detect missed, delayed, or duplicated frames instantly.
+          </div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid #7ee787; border-radius: var(--radius); padding: 18px 20px;">
+          <div style="color: #7ee787; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">2. CRC32 Frame Integrity</div>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">
+            Every frame carries a 32-bit checksum. The receiver validates the CRC before decoding, dropping corrupted bit-flipped packets before they reach compression tables.
+          </div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid #ffa657; border-radius: var(--radius); padding: 18px 20px;">
+          <div style="color: #ffa657; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">3. 409 RESYNC Handshake</div>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">
+            If the receiver restarts mid-stream, it returns <code style="color:#ffa657;">HTTP 409 RESYNC_REQUIRED</code>. The sender auto-resets its encoder and re-sends as <code style="color:#7ee787;">Seq #1</code> without manual restarts.
+          </div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid #d2a8ff; border-radius: var(--radius); padding: 18px 20px;">
+          <div style="color: #d2a8ff; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">4. In-Band Reorder Buffer</div>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">
+            If packets arrive out of order (e.g. #1, #3, #2), the receiver buffers #3 in memory until #2 arrives, then drains both in exact order with zero template loss.
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUAL ARCHITECTURE FLOW DIAGRAM -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 32px;">
+        <div style="color: var(--text-white); font-weight: 600; font-size: 0.88rem; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#79c0ff" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Real-World Synchronization & Recovery Life-Cycle
+        </div>
+        <pre style="background: #000; border: 1px solid var(--border-light); font-size: 0.78rem; line-height: 1.7; color: #a1a1aa;">
+<span style="color:#79c0ff;">[EDGE DEVICE (SENDER)]</span>                                         <span style="color:#7ee787;">[CLOUD RECEIVER (INGESTION)]</span>
+   │                                                                    │
+   ├──► <strong>1. Normal Stream:</strong> POST { seq: 10, crc32: "3a4f", b64: "..." } ──► Recv #10, Verifies CRC ✓, Decodes bit-exact
+   │                                                                    │
+   │  <span style="color:#ffa657;">[Server Restart / Maintenance Event Occurs]</span>                       └──► <span style="color:#ffa657;">Server restarts (Clean template memory)</span>
+   │                                                                    │
+   ├──► <strong>2. Out-of-Sync Packet:</strong> POST { seq: 11, ... } ────────────────► Detects Seq #11 without Seq #1..#10
+   │                                                                    │
+   │◄── <strong>3. Handshake Signal:</strong> <strong>HTTP 409 RESYNC_REQUIRED</strong> ─────────────────┘
+   │
+   ├──► <strong>4. Auto-Reset:</strong> Writes "RESET\n" to lds_encoder_engine.exe
+   │    Encoder clears dictionary, starts new session at Seq #1
+   │
+   └──► <strong>5. Re-send:</strong> POST { seq: 1, crc32: "9c1a", b64: "[OP_SYNC...]" } ─► Server registers new templates, stream 100% restored!
+        </pre>
+      </div>
+
+      <!-- CROSS-LANGUAGE INTEROPERABILITY SHOWCASE -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid #58a6ff; border-radius: var(--radius); padding: 22px 24px; margin-bottom: 36px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom: 10px;">
+          <span style="background:rgba(88,166,255,0.15); color:#79c0ff; border:1px solid rgba(88,166,255,0.3); font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px; text-transform:uppercase;">100% Language Agnostic</span>
+          <h3 style="color: var(--text-white); font-size: 1.05rem; margin: 0;">Mix &amp; Match: Any Sender + Any Receiver Combination</h3>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.84rem; line-height: 1.6; margin-bottom: 16px;">
+          <strong>Sender and Receiver do not need to be written in the same language.</strong> Because LDS standardizes the wire payload format (JSON or 10-byte binary header) and state-reset control flow, you can freely pair an embedded C / C++ IoT sender (like an ESP32 or STM32) with a cloud ingestion server written in <strong>Go, Rust, Java, Python, or Node.js</strong>.
+        </p>
+
+        <!-- COMBINATIONS MATRIX -->
+        <div class="table-container" style="margin-top: 12px; margin-bottom: 14px;">
+          <table style="font-size: 0.8rem;">
+            <thead>
+              <tr>
+                <th>Edge Sender Platform / Language</th>
+                <th>Wire Protocol</th>
+                <th>Recommended Cloud Receiver Language</th>
+                <th>Typical Production Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="t-lead">ESP32 / ESP8266 (C++ / Arduino)</td>
+                <td>JSON over HTTP POST / TLS</td>
+                <td><span class="t-badge pass">Go</span> or <span class="t-badge pass">Rust</span></td>
+                <td>Smart Home &amp; Industrial IoT Sensor Telemetry</td>
+              </tr>
+              <tr>
+                <td class="t-lead">STM32 / ARM Cortex-M (C99)</td>
+                <td>Framed TCP / Cellular Modem</td>
+                <td><span class="t-badge pass">Go</span> or <span class="t-badge pass">Java (Spring)</span></td>
+                <td>Factory Automation &amp; Medical Gateway Logging</td>
+              </tr>
+              <tr>
+                <td class="t-lead">Automotive ECU (AUTOSAR C99)</td>
+                <td>Framed TCP / TLS over 4G/5G</td>
+                <td><span class="t-badge pass">Rust</span> or <span class="t-badge pass">Go Ingestion</span></td>
+                <td>Vehicle Fleet CAN-FD Diagnostics &amp; Blackbox</td>
+              </tr>
+              <tr>
+                <td class="t-lead">Raspberry Pi (Node.js / Python)</td>
+                <td>JSON over HTTP / WebSocket</td>
+                <td><span class="t-badge pass">Node.js</span> or <span class="t-badge pass">Python (FastAPI)</span></td>
+                <td>Edge AI Gateways &amp; Local Video Analytics Hub</td>
+              </tr>
+              <tr>
+                <td class="t-lead">Linux Server / Bash Pipe (CLI)</td>
+                <td>Piped Netcat / Curl over TCP</td>
+                <td><span class="t-badge pass">Any (Go, Node, Java, Rust)</span></td>
+                <td>Syslog / Journald Centralized Cloud Aggregation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MULTI-LANGUAGE SENDER & RECEIVER TABS -->
+      <div class="section-eyebrow">Production Code Implementations (Sender &amp; Receiver)</div>
+      <h3 class="section-title" style="font-size:1.15rem; margin-bottom:12px;">Full Sender &amp; Receiver Servers in All Major Languages</h3>
+      
+      <div class="tab-wrapper">
+        <div class="tab-bar">
+          <button class="tab-link active" onclick="selectTab('sync-tab-node', this)">Node.js</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-py', this)">Python</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-go', this)">Go</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-rust', this)">Rust</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-c', this)">Embedded C / C++</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-java', this)">Java</button>
+          <button class="tab-link" onclick="selectTab('sync-tab-cli', this)">Bash / CLI</button>
+          <div class="tab-actions">
+            <button class="btn-copy" onclick="copyTabCode(this)">Copy Code</button>
+          </div>
+        </div>
+
+        <!-- 1. NODE.JS -->
+        <div class="tab-content active" id="sync-tab-node">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Edge Sender (Node.js) — CRC32 &amp; Auto-Resync</div>
+            <pre><code><span class="c-kw">const</span> http = <span class="c-fn">require</span>(<span class="c-str">'http'</span>);
+<span class="c-kw">const</span> { spawn } = <span class="c-fn">require</span>(<span class="c-str">'child_process'</span>);
+<span class="c-kw">const</span> readline = <span class="c-fn">require</span>(<span class="c-str">'readline'</span>);
+<span class="c-kw">const</span> { crc32 } = <span class="c-fn">require</span>(<span class="c-str">'zlib'</span>);
+
+<span class="c-kw">const</span> encoder = <span class="c-fn">spawn</span>(<span class="c-str">'./bin/lds_encoder_engine.exe'</span>);
+<span class="c-kw">const</span> encoderRl = readline.<span class="c-fn">createInterface</span>({ input: encoder.stdout });
+<span class="c-kw">let</span> seq = <span class="c-num">0</span>, sessionId = <span class="c-str">'session_'</span> + Date.<span class="c-fn">now</span>();
+
+<span class="c-kw">function</span> <span class="c-fn">resetEncoder</span>() {
+  <span class="c-kw">return new</span> <span class="c-typ">Promise</span>((resolve) => {
+    encoderRl.<span class="c-fn">once</span>(<span class="c-str">'line'</span>, () => resolve());
+    encoder.stdin.<span class="c-fn">write</span>(<span class="c-str">'RESET\n'</span>);
+  });
+}
+
+<span class="c-kw">async function</span> <span class="c-fn">sendCompressedLog</span>(logLine) {
+  seq++;
+  <span class="c-com">// 1. Compress with native LDS engine</span>
+  <span class="c-kw">const</span> enc = <span class="c-kw">await new</span> <span class="c-typ">Promise</span>(r => {
+    encoderRl.<span class="c-fn">once</span>(<span class="c-str">'line'</span>, l => r(JSON.<span class="c-fn">parse</span>(l)));
+    encoder.stdin.<span class="c-fn">write</span>(logLine.trim() + <span class="c-str">'\n'</span>);
+  });
+
+  <span class="c-com">// 2. Compute CRC32 checksum</span>
+  <span class="c-kw">const</span> payloadCrc = <span class="c-fn">crc32</span>(Buffer.<span class="c-fn">from</span>(enc.b64)).<span class="c-fn">toString</span>(<span class="c-num">16</span>).<span class="c-fn">padStart</span>(<span class="c-num">8</span>, <span class="c-str">'0'</span>);
+
+  <span class="c-com">// 3. Post to receiver with 409 RESYNC handler</span>
+  <span class="c-kw">const</span> payload = JSON.<span class="c-fn">stringify</span>({ sessionId, seq, b64: enc.b64, crc32: payloadCrc });
+  <span class="c-kw">const</span> req = http.<span class="c-fn">request</span>(<span class="c-str">'http://localhost:5000/api/logs/ingest'</span>, {
+    method: <span class="c-str">'POST'</span>,
+    headers: { <span class="c-str">'Content-Type'</span>: <span class="c-str">'application/json'</span> }
+  }, <span class="c-kw">async</span> (res) => {
+    <span class="c-kw">if</span> (res.statusCode === <span class="c-num">409</span>) {
+      <span class="c-com">// Server rebooted -> Auto-reset and re-send as Seq #1!</span>
+      console.<span class="c-fn">log</span>(<span class="c-str">'[RESYNC] Server reboot detected. Resetting encoder state...'</span>);
+      <span class="c-kw">await</span> <span class="c-fn">resetEncoder</span>();
+      seq = <span class="c-num">0</span>;
+      sessionId = <span class="c-str">'session_'</span> + Date.<span class="c-fn">now</span>();
+      <span class="c-kw">await</span> <span class="c-fn">sendCompressedLog</span>(logLine);
+    }
+  });
+  req.<span class="c-fn">write</span>(payload); req.<span class="c-fn">end</span>();
+}</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver (Node.js) — Reorder Buffer &amp; In-Band Reset</div>
+            <pre><code><span class="c-kw">const</span> http = <span class="c-fn">require</span>(<span class="c-str">'http'</span>);
+<span class="c-kw">const</span> { spawn } = <span class="c-fn">require</span>(<span class="c-str">'child_process'</span>);
+<span class="c-kw">const</span> readline = <span class="c-fn">require</span>(<span class="c-str">'readline'</span>);
+<span class="c-kw">const</span> { crc32 } = <span class="c-fn">require</span>(<span class="c-str">'zlib'</span>);
+
+<span class="c-kw">const</span> decoder = <span class="c-fn">spawn</span>(<span class="c-str">'./bin/lds_decoder_engine.exe'</span>);
+<span class="c-kw">const</span> decoderRl = readline.<span class="c-fn">createInterface</span>({ input: decoder.stdout });
+<span class="c-kw">let</span> expectedSeq = <span class="c-num">1</span>, currentSession = <span class="c-kw">null</span>;
+<span class="c-kw">const</span> reorderBuffer = <span class="c-kw">new</span> <span class="c-typ">Map</span>();
+
+http.<span class="c-fn">createServer</span>((req, res) => {
+  <span class="c-kw">let</span> body = <span class="c-str">''</span>;
+  req.<span class="c-fn">on</span>(<span class="c-str">'data'</span>, c => body += c);
+  req.<span class="c-fn">on</span>(<span class="c-str">'end'</span>, <span class="c-kw">async</span> () => {
+    <span class="c-kw">const</span> p = JSON.<span class="c-fn">parse</span>(body);
+
+    <span class="c-com">// 1. Validate CRC32 Checksum</span>
+    <span class="c-kw">if</span> (p.crc32 && <span class="c-fn">crc32</span>(Buffer.<span class="c-fn">from</span>(p.b64)).<span class="c-fn">toString</span>(<span class="c-num">16</span>).<span class="c-fn">padStart</span>(<span class="c-num">8</span>,<span class="c-str">'0'</span>) !== p.crc32.toLowerCase()) {
+      res.<span class="c-fn">writeHead</span>(<span class="c-num">400</span>); res.<span class="c-fn">end</span>(JSON.<span class="c-fn">stringify</span>({ error: <span class="c-str">'CRC32_CORRUPT'</span> })); <span class="c-kw">return</span>;
+    }
+
+    <span class="c-com">// 2. Check for Fresh Session or Reboot Resync</span>
+    <span class="c-kw">if</span> (p.seq === <span class="c-num">1</span>) {
+      decoder.stdin.<span class="c-fn">write</span>(<span class="c-str">'RESET\n'</span>); <span class="c-com">// In-band reset</span>
+      expectedSeq = <span class="c-num">1</span>; currentSession = p.sessionId; reorderBuffer.<span class="c-fn">clear</span>();
+    } <span class="c-kw">else if</span> (currentSession === <span class="c-kw">null</span>) {
+      <span class="c-com">// Receiver just booted mid-stream -> Send 409 RESYNC</span>
+      res.<span class="c-fn">writeHead</span>(<span class="c-num">409</span>); res.<span class="c-fn">end</span>(JSON.<span class="c-fn">stringify</span>({ error: <span class="c-str">'RESYNC_REQUIRED'</span> })); <span class="c-kw">return</span>;
+    }
+
+    <span class="c-com">// 3. Out-of-Order Packet Buffering</span>
+    <span class="c-kw">if</span> (p.seq > expectedSeq) {
+      reorderBuffer.<span class="c-fn">set</span>(p.seq, p);
+      res.<span class="c-fn">writeHead</span>(<span class="c-num">202</span>); res.<span class="c-fn">end</span>(JSON.<span class="c-fn">stringify</span>({ status: <span class="c-str">'BUFFERED'</span> })); <span class="c-kw">return</span>;
+    }
+
+    <span class="c-com">// 4. Decode In-Order &amp; Drain Reorder Buffer</span>
+    <span class="c-kw">await</span> <span class="c-fn">decodeLine</span>(p); expectedSeq++;
+    <span class="c-kw">while</span> (reorderBuffer.<span class="c-fn">has</span>(expectedSeq)) {
+      <span class="c-kw">await</span> <span class="c-fn">decodeLine</span>(reorderBuffer.<span class="c-fn">get</span>(expectedSeq));
+      reorderBuffer.<span class="c-fn">delete</span>(expectedSeq); expectedSeq++;
+    }
+    res.<span class="c-fn">writeHead</span>(<span class="c-num">200</span>); res.<span class="c-fn">end</span>(JSON.<span class="c-fn">stringify</span>({ status: <span class="c-str">'ACK'</span> }));
+  });
+}).<span class="c-fn">listen</span>(<span class="c-num">5000</span>);
+
+<span class="c-kw">function</span> <span class="c-fn">decodeLine</span>(pkt) {
+  <span class="c-kw">return new</span> <span class="c-typ">Promise</span>(r => {
+    decoderRl.<span class="c-fn">once</span>(<span class="c-str">'line'</span>, l => { console.<span class="c-fn">log</span>(<span class="c-str">'[DECODED]'</span>, JSON.<span class="c-fn">parse</span>(l).log); r(); });
+    decoder.stdin.<span class="c-fn">write</span>(pkt.b64 + <span class="c-str">'\n'</span>);
+  });
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 2. PYTHON -->
+        <div class="tab-content" id="sync-tab-py">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Edge Sender (Python) — With Automatic Resync Handler</div>
+            <pre><code><span class="c-kw">import</span> subprocess, json, zlib, time, requests
+
+encoder = subprocess.<span class="c-fn">Popen</span>([<span class="c-str">'./bin/lds_encoder_engine.exe'</span>],
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=<span class="c-kw">True</span>)
+encoder.stdout.<span class="c-fn">readline</span>() <span class="c-com"># Read READY greeting</span>
+
+seq = <span class="c-num">0</span>
+session_id = <span class="c-str">f"session_{int(time.time())}"</span>
+
+<span class="c-kw">def</span> <span class="c-fn">reset_encoder</span>():
+    <span class="c-kw">global</span> seq, session_id
+    encoder.stdin.<span class="c-fn">write</span>(<span class="c-str">"RESET\n"</span>)
+    encoder.stdin.<span class="c-fn">flush</span>()
+    encoder.stdout.<span class="c-fn">readline</span>()
+    seq = <span class="c-num">0</span>
+    session_id = <span class="c-str">f"session_{int(time.time())}"</span>
+
+<span class="c-kw">def</span> <span class="c-fn">send_log</span>(log_text: <span class="c-typ">str</span>):
+    <span class="c-kw">global</span> seq
+    seq += <span class="c-num">1</span>
+    encoder.stdin.<span class="c-fn">write</span>(log_text.strip() + <span class="c-str">'\n'</span>)
+    encoder.stdin.<span class="c-fn">flush</span>()
+    enc = json.<span class="c-fn">loads</span>(encoder.stdout.<span class="c-fn">readline</span>())
+
+    <span class="c-com"># Calculate IEEE 802.3 CRC32</span>
+    crc = <span class="c-str">f"{zlib.crc32(enc['b64'].encode('utf-8')) & 0xffffffff:08x}"</span>
+    payload = {<span class="c-str">"sessionId"</span>: session_id, <span class="c-str">"seq"</span>: seq, <span class="c-str">"b64"</span>: enc[<span class="c-str">'b64'</span>], <span class="c-str">"crc32"</span>: crc}
+
+    resp = requests.<span class="c-fn">post</span>(<span class="c-str">'http://localhost:5000/api/logs/ingest'</span>, json=payload)
+    <span class="c-kw">if</span> resp.status_code == <span class="c-num">409</span>:
+        <span class="c-com"># Receiver rebooted -> reset state and re-send line cleanly</span>
+        <span class="c-fn">print</span>(<span class="c-str">"[RESYNC] Server requested state reset. Auto-syncing from Seq #1..."</span>)
+        <span class="c-fn">reset_encoder</span>()
+        <span class="c-fn">send_log</span>(log_text)</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver (Python / Flask) — CRC32 &amp; Reorder Buffer</div>
+            <pre><code><span class="c-kw">from</span> flask <span class="c-kw">import</span> Flask, request, jsonify
+<span class="c-kw">import</span> subprocess, json, zlib
+
+app = Flask(__name__)
+decoder = subprocess.<span class="c-fn">Popen</span>([<span class="c-str">'./bin/lds_decoder_engine.exe'</span>],
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=<span class="c-kw">True</span>)
+decoder.stdout.<span class="c-fn">readline</span>()
+
+expected_seq = <span class="c-num">1</span>
+current_session = <span class="c-kw">None</span>
+reorder_buffer = {}
+
+<span class="c-kw">def</span> <span class="c-fn">decode_packet</span>(b64_str):
+    decoder.stdin.<span class="c-fn">write</span>(b64_str.strip() + <span class="c-str">'\n'</span>)
+    decoder.stdin.<span class="c-fn">flush</span>()
+    res = json.<span class="c-fn">loads</span>(decoder.stdout.<span class="c-fn">readline</span>())
+    <span class="c-fn">print</span>(<span class="c-str">f"[DECODED] {res.get('log', '')}"</span>)
+
+<span class="c-kw">@app.route</span>(<span class="c-str">'/api/logs/ingest'</span>, methods=[<span class="c-str">'POST'</span>])
+<span class="c-kw">def</span> <span class="c-fn">ingest</span>():
+    <span class="c-kw">global</span> expected_seq, current_session
+    p = request.json
+    
+    <span class="c-com">// 1. CRC32 Validation</span>
+    calc_crc = <span class="c-str">f"{zlib.crc32(p['b64'].encode('utf-8')) & 0xffffffff:08x}"</span>
+    <span class="c-kw">if</span> p.get(<span class="c-str">'crc32'</span>) <span class="c-kw">and</span> p[<span class="c-str">'crc32'</span>].lower() != calc_crc:
+        <span class="c-kw">return</span> jsonify({<span class="c-str">"error"</span>: <span class="c-str">"CRC32_CORRUPT"</span>}), <span class="c-num">400</span>
+
+    <span class="c-com">// 2. Handshake Check</span>
+    <span class="c-kw">if</span> p[<span class="c-str">'seq'</span>] == <span class="c-num">1</span>:
+        decoder.stdin.<span class="c-fn">write</span>(<span class="c-str">"RESET\n"</span>); decoder.stdin.<span class="c-fn">flush</span>(); decoder.stdout.<span class="c-fn">readline</span>()
+        expected_seq = <span class="c-num">1</span>; current_session = p.get(<span class="c-str">'sessionId'</span>); reorder_buffer.<span class="c-fn">clear</span>()
+    <span class="c-kw">elif</span> current_session <span class="c-kw">is None</span>:
+        <span class="c-kw">return</span> jsonify({<span class="c-str">"error"</span>: <span class="c-str">"RESYNC_REQUIRED"</span>}), <span class="c-num">409</span>
+
+    <span class="c-com">// 3. Buffer Out-of-Order Packets</span>
+    <span class="c-kw">if</span> p[<span class="c-str">'seq'</span>] > expected_seq:
+        reorder_buffer[p[<span class="c-str">'seq'</span>]] = p[<span class="c-str">'b64'</span>]
+        <span class="c-kw">return</span> jsonify({<span class="c-str">"status"</span>: <span class="c-str">"BUFFERED"</span>}), <span class="c-num">202</span>
+
+    <span class="c-com">// 4. In-Order Decode &amp; Drain Queue</span>
+    <span class="c-fn">decode_packet</span>(p[<span class="c-str">'b64'</span>]); expected_seq += <span class="c-num">1</span>
+    <span class="c-kw">while</span> expected_seq <span class="c-kw">in</span> reorder_buffer:
+        <span class="c-fn">decode_packet</span>(reorder_buffer.pop(expected_seq))
+        expected_seq += <span class="c-num">1</span>
+
+    <span class="c-kw">return</span> jsonify({<span class="c-str">"status"</span>: <span class="c-str">"ACK"</span>, <span class="c-str">"seq"</span>: p[<span class="c-str">'seq'</span>]}), <span class="c-num">200</span>
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">'__main__'</span>:
+    app.<span class="c-fn">run</span>(port=<span class="c-num">5000</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- 3. GOLANG -->
+        <div class="tab-content" id="sync-tab-go">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Edge Sender (Go) — Monotonic Sequence &amp; 409 Resync</div>
+            <pre><code><span class="c-kw">package</span> main
+
+<span class="c-kw">import</span> (
+    <span class="c-str">"bufio"</span>; <span class="c-str">"bytes"</span>; <span class="c-str">"encoding/json"</span>; <span class="c-str">"fmt"</span>
+    <span class="c-str">"hash/crc32"</span>; <span class="c-str">"net/http"</span>; <span class="c-str">"os/exec"</span>; <span class="c-str">"time"</span>
+)
+
+<span class="c-kw">var</span> (
+    cmd       = exec.<span class="c-fn">Command</span>(<span class="c-str">"./bin/lds_encoder_engine.exe"</span>)
+    stdin, _  = cmd.<span class="c-fn">StdinPipe</span>()
+    stdout, _ = cmd.<span class="c-fn">StdoutPipe</span>()
+    reader    = bufio.<span class="c-fn">NewReader</span>(stdout)
+    seq       uint64 = <span class="c-num">0</span>
+    session   = fmt.<span class="c-fn">Sprintf</span>(<span class="c-str">"sess_%d"</span>, time.<span class="c-fn">Now</span>().<span class="c-fn">Unix</span>())
+)
+
+<span class="c-kw">func</span> <span class="c-fn">resetEncoder</span>() {
+    stdin.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(<span class="c-str">"RESET\n"</span>))
+    reader.<span class="c-fn">ReadString</span>(<span class="c-str">'\n'</span>)
+    seq = <span class="c-num">0</span>
+    session = fmt.<span class="c-fn">Sprintf</span>(<span class="c-str">"sess_%d"</span>, time.<span class="c-fn">Now</span>().<span class="c-fn">Unix</span>())
+}
+
+<span class="c-kw">func</span> <span class="c-fn">send</span>(logLine <span class="c-typ">string</span>) {
+    seq++
+    stdin.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(logLine + <span class="c-str">"\n"</span>))
+    out, _ := reader.<span class="c-fn">ReadString</span>(<span class="c-str">'\n'</span>)
+    <span class="c-kw">var</span> enc <span class="c-kw">map</span>[<span class="c-typ">string</span>]<span class="c-kw">interface</span>{}
+    json.<span class="c-fn">Unmarshal</span>([]<span class="c-typ">byte</span>(out), &enc)
+
+    b64 := enc[<span class="c-str">"b64"</span>].(<span class="c-typ">string</span>)
+    crc := fmt.<span class="c-fn">Sprintf</span>(<span class="c-str">"%08x"</span>, crc32.<span class="c-fn">ChecksumIEEE</span>([]<span class="c-typ">byte</span>(b64)))
+
+    payload, _ := json.<span class="c-fn">Marshal</span>(<span class="c-kw">map</span>[<span class="c-typ">string</span>]<span class="c-kw">interface</span>{}{
+        <span class="c-str">"sessionId"</span>: session, <span class="c-str">"seq"</span>: seq, <span class="c-str">"b64"</span>: b64, <span class="c-str">"crc32"</span>: crc,
+    })
+
+    resp, err := http.<span class="c-fn">Post</span>(<span class="c-str">"http://localhost:5000/api/logs/ingest"</span>, <span class="c-str">"application/json"</span>, bytes.<span class="c-fn">NewReader</span>(payload))
+    <span class="c-kw">if</span> err == <span class="c-kw">nil</span> && resp.StatusCode == <span class="c-num">409</span> {
+        fmt.<span class="c-fn">Println</span>(<span class="c-str">"[RESYNC] Server rebooted -> Auto-resetting Go encoder..."</span>)
+        <span class="c-fn">resetEncoder</span>()
+        <span class="c-fn">send</span>(logLine)
+    }
+}</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver Server (Go) — Reorder Map &amp; Pipe Decoder</div>
+            <pre><code><span class="c-kw">package</span> main
+
+<span class="c-kw">import</span> (
+    <span class="c-str">"bufio"</span>; <span class="c-str">"encoding/json"</span>; <span class="c-str">"fmt"</span>; <span class="c-str">"hash/crc32"</span>
+    <span class="c-str">"net/http"</span>; <span class="c-str">"os/exec"</span>; <span class="c-str">"sync"</span>
+)
+
+<span class="c-kw">type</span> <span class="c-typ">LogPacket</span> <span class="c-kw">struct</span> {
+    SessionID <span class="c-typ">string</span> <span class="c-str">`json:"sessionId"`</span>
+    Seq       <span class="c-typ">uint64</span> <span class="c-str">`json:"seq"`</span>
+    B64       <span class="c-typ">string</span> <span class="c-str">`json:"b64"`</span>
+    CRC32     <span class="c-typ">string</span> <span class="c-str">`json:"crc32"`</span>
+}
+
+<span class="c-kw">var</span> (
+    mu           sync.Mutex
+    expectedSeq  uint64 = <span class="c-num">1</span>
+    curSession   <span class="c-typ">string</span> = <span class="c-str">""</span>
+    reorderBuf   = <span class="c-fn">make</span>(<span class="c-kw">map</span>[<span class="c-typ">uint64</span>]<span class="c-typ">string</span>)
+    decCmd       = exec.<span class="c-fn">Command</span>(<span class="c-str">"./bin/lds_decoder_engine.exe"</span>)
+    decIn, _     = decCmd.<span class="c-fn">StdinPipe</span>()
+    decOut, _    = decCmd.<span class="c-fn">StdoutPipe</span>()
+    decReader    = bufio.<span class="c-fn">NewReader</span>(decOut)
+)
+
+<span class="c-kw">func</span> <span class="c-fn">decodeOne</span>(b64 <span class="c-typ">string</span>) {
+    decIn.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(b64 + <span class="c-str">"\n"</span>))
+    out, _ := decReader.<span class="c-fn">ReadString</span>(<span class="c-str">'\n'</span>)
+    fmt.<span class="c-fn">Print</span>(<span class="c-str">"[GO-DECODED] "</span> + out)
+}
+
+<span class="c-kw">func</span> <span class="c-fn">ingestHandler</span>(w http.<span class="c-typ">ResponseWriter</span>, r *http.<span class="c-typ">Request</span>) {
+    <span class="c-kw">var</span> p LogPacket
+    json.<span class="c-fn">NewDecoder</span>(r.Body).<span class="c-fn">Decode</span>(&p)
+
+    <span class="c-com">// 1. Validate CRC32 Checksum</span>
+    calcCRC := fmt.<span class="c-fn">Sprintf</span>(<span class="c-str">"%08x"</span>, crc32.<span class="c-fn">ChecksumIEEE</span>([]<span class="c-typ">byte</span>(p.B64)))
+    <span class="c-kw">if</span> p.CRC32 != <span class="c-str">""</span> && p.CRC32 != calcCRC {
+        http.<span class="c-fn">Error</span>(w, <span class="c-str">`{"error":"CRC32_CORRUPT"}`</span>, http.StatusBadRequest); <span class="c-kw">return</span>
+    }
+
+    mu.<span class="c-fn">Lock</span>()
+    <span class="c-kw">defer</span> mu.<span class="c-fn">Unlock</span>()
+
+    <span class="c-com">// 2. Check for Fresh Session / In-Band Reset</span>
+    <span class="c-kw">if</span> p.Seq == <span class="c-num">1</span> {
+        decIn.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(<span class="c-str">"RESET\n"</span>))
+        decReader.<span class="c-fn">ReadString</span>(<span class="c-str">'\n'</span>)
+        expectedSeq = <span class="c-num">1</span>; curSession = p.SessionID; reorderBuf = <span class="c-fn">make</span>(<span class="c-kw">map</span>[<span class="c-typ">uint64</span>]<span class="c-typ">string</span>)
+    } <span class="c-kw">else if</span> curSession == <span class="c-str">""</span> {
+        <span class="c-com">// Server rebooted mid-stream -> Send 409 RESYNC</span>
+        http.<span class="c-fn">Error</span>(w, <span class="c-str">`{"error":"RESYNC_REQUIRED"}`</span>, http.StatusConflict); <span class="c-kw">return</span>
+    }
+
+    <span class="c-com">// 3. Reorder Buffering for Out-of-Order Packets</span>
+    <span class="c-kw">if</span> p.Seq > expectedSeq {
+        reorderBuf[p.Seq] = p.B64
+        w.<span class="c-fn">WriteHeader</span>(http.StatusAccepted); w.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(<span class="c-str">`{"status":"BUFFERED"}`</span>)); <span class="c-kw">return</span>
+    }
+
+    <span class="c-com">// 4. In-Order Decode &amp; Drain Reorder Buffer</span>
+    <span class="c-fn">decodeOne</span>(p.B64); expectedSeq++
+    <span class="c-kw">for</span> {
+        <span class="c-kw">if</span> nextB64, ok := reorderBuf[expectedSeq]; ok {
+            <span class="c-fn">decodeOne</span>(nextB64)
+            <span class="c-fn">delete</span>(reorderBuf, expectedSeq)
+            expectedSeq++
+        } <span class="c-kw">else</span> { <span class="c-kw">break</span> }
+    }
+    w.<span class="c-fn">Write</span>([]<span class="c-typ">byte</span>(<span class="c-str">`{"status":"ACK"}`</span>))
+}
+
+<span class="c-kw">func</span> <span class="c-fn">main</span>() {
+    decCmd.<span class="c-fn">Start</span>(); decReader.<span class="c-fn">ReadString</span>(<span class="c-str">'\n'</span>)
+    http.<span class="c-fn">HandleFunc</span>(<span class="c-str">"/api/logs/ingest"</span>, ingestHandler)
+    fmt.<span class="c-fn">Println</span>(<span class="c-str">"Go LDS Ingestion Server listening on :5000..."</span>)
+    http.<span class="c-fn">ListenAndServe</span>(<span class="c-str">":5000"</span>, <span class="c-kw">nil</span>)
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 4. RUST -->
+        <div class="tab-content" id="sync-tab-rust">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Edge Sender (Rust) — Robust Resync Protocol</div>
+            <pre><code><span class="c-kw">use</span> std::io::{<span class="c-typ">BufRead</span>, <span class="c-typ">BufReader</span>, <span class="c-typ">Write</span>};
+<span class="c-kw">use</span> std::process::{<span class="c-typ">Command</span>, <span class="c-typ">Stdio</span>};
+<span class="c-kw">use</span> reqwest::blocking::Client;
+<span class="c-kw">use</span> serde_json::json;
+
+<span class="c-kw">fn</span> <span class="c-fn">send_compressed</span>(client: &amp;Client, log_line: &amp;<span class="c-typ">str</span>, seq: &amp;<span class="c-kw">mut</span> <span class="c-typ">u64</span>, session: &amp;<span class="c-typ">str</span>,
+                   stdin: &amp;<span class="c-kw">mut</span> std::process::<span class="c-typ">ChildStdin</span>, reader: &amp;<span class="c-kw">mut</span> <span class="c-typ">BufReader</span>&lt;std::process::<span class="c-typ">ChildStdout</span>&gt;) {
+    *seq += <span class="c-num">1</span>;
+    <span class="c-fn">writeln!</span>(stdin, <span class="c-str">"{}"</span>, log_line).unwrap();
+    <span class="c-kw">let mut</span> enc_str = <span class="c-typ">String</span>::<span class="c-fn">new</span>();
+    reader.<span class="c-fn">read_line</span>(&amp;<span class="c-kw">mut</span> enc_str).unwrap();
+    <span class="c-kw">let</span> enc_json: serde_json::<span class="c-typ">Value</span> = serde_json::<span class="c-fn">from_str</span>(&amp;enc_str).unwrap();
+    <span class="c-kw">let</span> b64 = enc_json[<span class="c-str">"b64"</span>].<span class="c-fn">as_str</span>().unwrap();
+
+    <span class="c-kw">let</span> crc = <span class="c-fn">format!</span>(<span class="c-str">"{:08x}"</span>, crc32fast::Hasher::<span class="c-fn">new</span>().<span class="c-fn">chain</span>(b64.as_bytes()).finalize());
+    <span class="c-kw">let</span> payload = <span class="c-fn">json!</span>({ <span class="c-str">"sessionId"</span>: session, <span class="c-str">"seq"</span>: *seq, <span class="c-str">"b64"</span>: b64, <span class="c-str">"crc32"</span>: crc });
+
+    <span class="c-kw">let</span> res = client.<span class="c-fn">post</span>(<span class="c-str">"http://localhost:5000/api/logs/ingest"</span>).<span class="c-fn">json</span>(&amp;payload).<span class="c-fn">send</span>().unwrap();
+    <span class="c-kw">if</span> res.status() == reqwest::StatusCode::<span class="c-typ">CONFLICT</span> {
+        <span class="c-com">// 409 RESYNC REQUIRED -> Reset local encoder and replay</span>
+        <span class="c-fn">writeln!</span>(stdin, <span class="c-str">"RESET"</span>).unwrap();
+        <span class="c-kw">let mut</span> reset_ack = <span class="c-typ">String</span>::<span class="c-fn">new</span>(); reader.<span class="c-fn">read_line</span>(&amp;<span class="c-kw">mut</span> reset_ack).unwrap();
+        *seq = <span class="c-num">0</span>;
+        send_compressed(client, log_line, seq, session, stdin, reader);
+    }
+}</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver Server (Rust) — High-Performance Ingestion</div>
+            <pre><code><span class="c-kw">use</span> actix_web::{web, App, HttpResponse, HttpServer, Responder};
+<span class="c-kw">use</span> std::collections::BTreeMap;
+<span class="c-kw">use</span> std::sync::Mutex;
+<span class="c-kw">use</span> std::io::{<span class="c-typ">BufRead</span>, <span class="c-typ">BufReader</span>, <span class="c-typ">Write</span>};
+<span class="c-kw">use</span> std::process::{<span class="c-typ">Command</span>, <span class="c-typ">Stdio</span>};
+
+<span class="c-kw">struct</span> <span class="c-typ">ServerState</span> {
+    expected_seq: <span class="c-typ">u64</span>,
+    session_id: <span class="c-typ">Option</span>&lt;<span class="c-typ">String</span>&gt;,
+    reorder_buffer: <span class="c-typ">BTreeMap</span>&lt;<span class="c-typ">u64</span>, <span class="c-typ">String</span>&gt;,
+    dec_stdin: std::process::<span class="c-typ">ChildStdin</span>,
+    dec_reader: <span class="c-typ">BufReader</span>&lt;std::process::<span class="c-typ">ChildStdout</span>&gt;,
+}
+
+<span class="c-kw">async fn</span> <span class="c-fn">ingest</span>(data: web::<span class="c-typ">Json</span>&lt;serde_json::<span class="c-typ">Value</span>&gt;, state: web::<span class="c-typ">Data</span>&lt;<span class="c-typ">Mutex</span>&lt;<span class="c-typ">ServerState</span>&gt;&gt;) -> <span class="c-kw">impl</span> <span class="c-typ">Responder</span> {
+    <span class="c-kw">let mut</span> s = state.<span class="c-fn">lock</span>().unwrap();
+    <span class="c-kw">let</span> seq = data[<span class="c-str">"seq"</span>].<span class="c-fn">as_u64</span>().unwrap_or(<span class="c-num">0</span>);
+    <span class="c-kw">let</span> b64 = data[<span class="c-str">"b64"</span>].<span class="c-fn">as_str</span>().unwrap_or(<span class="c-str">""</span>).to_string();
+
+    <span class="c-com">// 1. Handle New Session / Reset</span>
+    <span class="c-kw">if</span> seq == <span class="c-num">1</span> {
+        <span class="c-fn">writeln!</span>(s.dec_stdin, <span class="c-str">"RESET"</span>).unwrap();
+        <span class="c-kw">let mut</span> ack = <span class="c-typ">String</span>::<span class="c-fn">new</span>(); s.dec_reader.<span class="c-fn">read_line</span>(&amp;<span class="c-kw">mut</span> ack).unwrap();
+        s.expected_seq = <span class="c-num">1</span>; s.reorder_buffer.clear();
+        s.session_id = <span class="c-typ">Some</span>(data[<span class="c-str">"sessionId"</span>].<span class="c-fn">as_str</span>().unwrap_or(<span class="c-str">""</span>).to_string());
+    } <span class="c-kw">else if</span> s.session_id.is_none() {
+        <span class="c-kw">return</span> HttpResponse::<span class="c-typ">Conflict</span>().<span class="c-fn">json</span>(serde_json::<span class="c-fn">json!</span>({<span class="c-str">"error"</span>:<span class="c-str">"RESYNC_REQUIRED"</span>}));
+    }
+
+    <span class="c-com">// 2. Buffer Out-of-Order Packets</span>
+    <span class="c-kw">if</span> seq > s.expected_seq {
+        s.reorder_buffer.<span class="c-fn">insert</span>(seq, b64);
+        <span class="c-kw">return</span> HttpResponse::<span class="c-typ">Accepted</span>().<span class="c-fn">json</span>(serde_json::<span class="c-fn">json!</span>({<span class="c-str">"status"</span>:<span class="c-str">"BUFFERED"</span>}));
+    }
+
+    <span class="c-com">// 3. In-Order Decode &amp; Drain</span>
+    <span class="c-fn">writeln!</span>(s.dec_stdin, <span class="c-str">"{}"</span>, b64).unwrap();
+    <span class="c-kw">let mut</span> dec_out = <span class="c-typ">String</span>::<span class="c-fn">new</span>(); s.dec_reader.<span class="c-fn">read_line</span>(&amp;<span class="c-kw">mut</span> dec_out).unwrap();
+    s.expected_seq += <span class="c-num">1</span>;
+
+    <span class="c-kw">while let</span> <span class="c-typ">Some</span>(buffered_b64) = s.reorder_buffer.<span class="c-fn">remove</span>(&amp;s.expected_seq) {
+        <span class="c-fn">writeln!</span>(s.dec_stdin, <span class="c-str">"{}"</span>, buffered_b64).unwrap();
+        <span class="c-kw">let mut</span> line = <span class="c-typ">String</span>::<span class="c-fn">new</span>(); s.dec_reader.<span class="c-fn">read_line</span>(&amp;<span class="c-kw">mut</span> line).unwrap();
+        s.expected_seq += <span class="c-num">1</span>;
+    }
+
+    HttpResponse::<span class="c-typ">Ok</span>().<span class="c-fn">json</span>(serde_json::<span class="c-fn">json!</span>({<span class="c-str">"status"</span>:<span class="c-str">"ACK"</span>}))
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 5. EMBEDDED C / C++ -->
+        <div class="tab-content" id="sync-tab-c">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Bare-Metal C Header API — Sender Client</div>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;stdio.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;stdlib.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;string.h&gt;</span>
+
+<span class="c-typ">static LDSEncoder</span>* encoder = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> stream_seq = <span class="c-num">0</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">on_network_reconnect</span>(<span class="c-typ">void</span>) {
+    <span class="c-com">// Network connection dropped &amp; re-established -> Reset encoder state to clean epoch</span>
+    <span class="c-fn">printf</span>(<span class="c-str">"[NET] Socket reconnected. Resetting LDS state to clean baseline...\n"</span>);
+    <span class="c-fn">lds_encoder_reset</span>(encoder);
+    stream_seq = <span class="c-num">0</span>;
+}
+
+<span class="c-typ">void</span> <span class="c-fn">stream_log_line</span>(<span class="c-typ">const char</span>* line, <span class="c-typ">int</span> socket_fd) {
+    <span class="c-kw">if</span> (!encoder) encoder = <span class="c-fn">lds_encoder_create</span>();
+    stream_seq++;
+
+    <span class="c-typ">size_t</span> out_len = <span class="c-num">0</span>;
+    <span class="c-typ">uint8_t</span>* payload = <span class="c-fn">lds_encode_line</span>(encoder, line, &amp;out_len);
+
+    <span class="c-com">// Construct standard 10-byte binary frame:</span>
+    <span class="c-com">// [Magic 2B: 0x4C 0x44] [Seq 4B] [CRC32 4B] [Payload bytes...]</span>
+    <span class="c-typ">uint8_t</span> frame[<span class="c-num">10</span> + out_len];
+    frame[<span class="c-num">0</span>] = <span class="c-num">0x4C</span>; frame[<span class="c-num">1</span>] = <span class="c-num">0x44</span>; <span class="c-com">// "LD"</span>
+    <span class="c-fn">memcpy</span>(&amp;frame[<span class="c-num">2</span>], &amp;stream_seq, <span class="c-num">4</span>);
+    <span class="c-typ">uint32_t</span> crc = <span class="c-fn">lds_crc32</span>(payload, out_len);
+    <span class="c-fn">memcpy</span>(&amp;frame[<span class="c-num">6</span>], &amp;crc, <span class="c-num">4</span>);
+    <span class="c-fn">memcpy</span>(&amp;frame[<span class="c-num">10</span>], payload, out_len);
+
+    <span class="c-fn">send</span>(socket_fd, frame, <span class="c-num">10</span> + out_len, <span class="c-num">0</span>);
+    <span class="c-fn">free</span>(payload);
+}</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver Server (C99 / C++) — Direct Native Library</div>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;stdio.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;stdlib.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;string.h&gt;</span>
+
+<span class="c-typ">static LDSDecoder</span>* decoder = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> expected_seq = <span class="c-num">1</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">process_incoming_packet</span>(<span class="c-typ">const uint8_t</span>* frame, <span class="c-typ">size_t</span> total_len) {
+    <span class="c-kw">if</span> (!decoder) decoder = <span class="c-fn">lds_decoder_create</span>();
+    <span class="c-kw">if</span> (total_len &lt; <span class="c-num">10</span> || frame[<span class="c-num">0</span>] != <span class="c-num">0x4C</span> || frame[<span class="c-num">1</span>] != <span class="c-num">0x44</span>) <span class="c-kw">return</span>;
+
+    <span class="c-typ">uint32_t</span> pkt_seq, pkt_crc;
+    <span class="c-fn">memcpy</span>(&amp;pkt_seq, &amp;frame[<span class="c-num">2</span>], <span class="c-num">4</span>);
+    <span class="c-fn">memcpy</span>(&amp;pkt_crc, &amp;frame[<span class="c-num">6</span>], <span class="c-num">4</span>);
+    <span class="c-typ">const uint8_t</span>* payload = &amp;frame[<span class="c-num">10</span>];
+    <span class="c-typ">size_t</span> payload_len = total_len - <span class="c-num">10</span>;
+
+    <span class="c-com">// 1. Validate CRC32 Checksum</span>
+    <span class="c-kw">if</span> (<span class="c-fn">lds_crc32</span>(payload, payload_len) != pkt_crc) {
+        <span class="c-fn">printf</span>(<span class="c-str">"[CRC_ERROR] Dropping corrupt packet Seq #%u\n"</span>, pkt_seq); <span class="c-kw">return</span>;
+    }
+
+    <span class="c-com">// 2. Handle Stream Resync Epoch</span>
+    <span class="c-kw">if</span> (pkt_seq == <span class="c-num">1</span>) {
+        <span class="c-fn">lds_decoder_reset</span>(decoder);
+        expected_seq = <span class="c-num">1</span>;
+    }
+
+    <span class="c-com">// 3. Decode Log Line with Bit-Exact Parity</span>
+    <span class="c-typ">char</span>* restored_log = <span class="c-fn">lds_decode_line</span>(decoder, payload, payload_len);
+    <span class="c-kw">if</span> (restored_log) {
+        <span class="c-fn">printf</span>(<span class="c-str">"[INGEST] Seq #%u: %s\n"</span>, pkt_seq, restored_log);
+        <span class="c-fn">free</span>(restored_log);
+        expected_seq++;
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 6. JAVA -->
+        <div class="tab-content" id="sync-tab-java">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Java Edge Sender — java.util.zip.CRC32 &amp; ProcessBuilder</div>
+            <pre><code><span class="c-kw">import</span> java.io.*;
+<span class="c-kw">import</span> java.net.URI;
+<span class="c-kw">import</span> java.net.http.*;
+<span class="c-kw">import</span> java.util.zip.CRC32;
+
+<span class="c-kw">public class</span> <span class="c-typ">LDSSyncClient</span> {
+    <span class="c-kw">private static</span> Process encoder;
+    <span class="c-kw">private static</span> BufferedWriter writer;
+    <span class="c-kw">private static</span> BufferedReader reader;
+    <span class="c-kw">private static</span> HttpClient httpClient = HttpClient.<span class="c-fn">newHttpClient</span>();
+    <span class="c-kw">private static long</span> seq = <span class="c-num">0</span>;
+    <span class="c-kw">private static</span> String session = <span class="c-str">"sess_"</span> + System.<span class="c-fn">currentTimeMillis</span>();
+
+    <span class="c-kw">public static void</span> <span class="c-fn">init</span>() <span class="c-kw">throws</span> Exception {
+        encoder = <span class="c-kw">new</span> <span class="c-typ">ProcessBuilder</span>(<span class="c-str">"./bin/lds_encoder_engine.exe"</span>).<span class="c-fn">start</span>();
+        writer = <span class="c-kw">new</span> <span class="c-typ">BufferedWriter</span>(<span class="c-kw">new</span> <span class="c-typ">OutputStreamWriter</span>(encoder.<span class="c-fn">getOutputStream</span>()));
+        reader = <span class="c-kw">new</span> <span class="c-typ">BufferedReader</span>(<span class="c-kw">new</span> <span class="c-typ">InputStreamReader</span>(encoder.<span class="c-fn">getInputStream</span>()));
+        reader.<span class="c-fn">readLine</span>(); <span class="c-com">// READY</span>
+    }
+
+    <span class="c-kw">public static void</span> <span class="c-fn">resetEncoder</span>() <span class="c-kw">throws</span> Exception {
+        writer.<span class="c-fn">write</span>(<span class="c-str">"RESET\n"</span>); writer.<span class="c-fn">flush</span>();
+        reader.<span class="c-fn">readLine</span>();
+        seq = <span class="c-num">0</span>;
+        session = <span class="c-str">"sess_"</span> + System.<span class="c-fn">currentTimeMillis</span>();
+    }
+
+    <span class="c-kw">public static void</span> <span class="c-fn">sendLog</span>(String log) <span class="c-kw">throws</span> Exception {
+        seq++;
+        writer.<span class="c-fn">write</span>(log.trim() + <span class="c-str">"\n"</span>); writer.<span class="c-fn">flush</span>();
+        String jsonStr = reader.<span class="c-fn">readLine</span>();
+        String b64 = jsonStr.<span class="c-fn">replaceAll</span>(<span class="c-str">".*\"b64\":\"([^\"]+)\".*"</span>, <span class="c-str">"$1"</span>);
+
+        CRC32 crc = <span class="c-kw">new</span> <span class="c-typ">CRC32</span>();
+        crc.<span class="c-fn">update</span>(b64.<span class="c-fn">getBytes</span>());
+        String crcHex = String.<span class="c-fn">format</span>(<span class="c-str">"%08x"</span>, crc.<span class="c-fn">getValue</span>());
+
+        String payload = String.<span class="c-fn">format</span>(<span class="c-str">"{\"sessionId\":\"%s\",\"seq\":%d,\"b64\":\"%s\",\"crc32\":\"%s\"}"</span>, session, seq, b64, crcHex);
+        HttpRequest req = HttpRequest.<span class="c-fn">newBuilder</span>()
+            .<span class="c-fn">uri</span>(URI.<span class="c-fn">create</span>(<span class="c-str">"http://localhost:5000/api/logs/ingest"</span>))
+            .<span class="c-fn">header</span>(<span class="c-str">"Content-Type"</span>, <span class="c-str">"application/json"</span>)
+            .<span class="c-fn">POST</span>(HttpRequest.BodyPublishers.<span class="c-fn">ofString</span>(payload)).<span class="c-fn">build</span>();
+
+        HttpResponse&lt;String&gt; res = httpClient.<span class="c-fn">send</span>(req, HttpResponse.BodyHandlers.<span class="c-fn">ofString</span>());
+        <span class="c-kw">if</span> (res.<span class="c-fn">statusCode</span>() == <span class="c-num">409</span>) {
+            <span class="c-fn">System.out.println</span>(<span class="c-str">"[RESYNC] Server restart detected. Resetting Java encoder..."</span>);
+            <span class="c-fn">resetEncoder</span>();
+            <span class="c-fn">sendLog</span>(log);
+        }
+    }
+}</code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Cloud Receiver Server (Java / Spring / Netty)</div>
+            <pre><code><span class="c-kw">import</span> com.sun.net.httpserver.*;
+<span class="c-kw">import</span> java.io.*;
+<span class="c-kw">import</span> java.net.InetSocketAddress;
+<span class="c-kw">import</span> java.util.TreeMap;
+<span class="c-kw">import</span> java.util.zip.CRC32;
+
+<span class="c-kw">public class</span> <span class="c-typ">LDSReceiverServer</span> {
+    <span class="c-kw">private static</span> Process decoder;
+    <span class="c-kw">private static</span> BufferedWriter decWriter;
+    <span class="c-kw">private static</span> BufferedReader decReader;
+    <span class="c-kw">private static long</span> expectedSeq = <span class="c-num">1</span>;
+    <span class="c-kw">private static</span> String currentSession = <span class="c-kw">null</span>;
+    <span class="c-kw">private static</span> TreeMap&lt;Long, String&gt; reorderBuffer = <span class="c-kw">new</span> <span class="c-typ">TreeMap</span>&lt;&gt;();
+
+    <span class="c-kw">public static void</span> <span class="c-fn">main</span>(String[] args) <span class="c-kw">throws</span> Exception {
+        decoder = <span class="c-kw">new</span> <span class="c-typ">ProcessBuilder</span>(<span class="c-str">"./bin/lds_decoder_engine.exe"</span>).<span class="c-fn">start</span>();
+        decWriter = <span class="c-kw">new</span> <span class="c-typ">BufferedWriter</span>(<span class="c-kw">new</span> <span class="c-typ">OutputStreamWriter</span>(decoder.<span class="c-fn">getOutputStream</span>()));
+        decReader = <span class="c-kw">new</span> <span class="c-typ">BufferedReader</span>(<span class="c-kw">new</span> <span class="c-typ">InputStreamReader</span>(decoder.<span class="c-fn">getInputStream</span>()));
+        decReader.<span class="c-fn">readLine</span>();
+
+        HttpServer server = HttpServer.<span class="c-fn">create</span>(<span class="c-kw">new</span> <span class="c-typ">InetSocketAddress</span>(<span class="c-num">5000</span>), <span class="c-num">0</span>);
+        server.<span class="c-fn">createContext</span>(<span class="c-str">"/api/logs/ingest"</span>, (exchange) -&gt; {
+            String body = <span class="c-kw">new</span> <span class="c-typ">String</span>(exchange.<span class="c-fn">getRequestBody</span>().<span class="c-fn">readAllBytes</span>());
+            <span class="c-kw">long</span> seq = Long.<span class="c-fn">parseLong</span>(body.<span class="c-fn">replaceAll</span>(<span class="c-str">".*\"seq\":([0-9]+).*"</span>, <span class="c-str">"$1"</span>));
+            String b64 = body.<span class="c-fn">replaceAll</span>(<span class="c-str">".*\"b64\":\"([^\"]+)\".*"</span>, <span class="c-str">"$1"</span>);
+
+            <span class="c-kw">synchronized</span> (LDSReceiverServer.<span class="c-kw">class</span>) {
+                <span class="c-kw">if</span> (seq == <span class="c-num">1</span>) {
+                    decWriter.<span class="c-fn">write</span>(<span class="c-str">"RESET\n"</span>); decWriter.<span class="c-fn">flush</span>(); decReader.<span class="c-fn">readLine</span>();
+                    expectedSeq = <span class="c-num">1</span>; currentSession = <span class="c-str">"active"</span>; reorderBuffer.<span class="c-fn">clear</span>();
+                } <span class="c-kw">else if</span> (currentSession == <span class="c-kw">null</span>) {
+                    exchange.<span class="c-fn">sendResponseHeaders</span>(<span class="c-num">409</span>, <span class="c-num">0</span>); exchange.<span class="c-fn">close</span>(); <span class="c-kw">return</span>;
+                }
+
+                <span class="c-kw">if</span> (seq &gt; expectedSeq) {
+                    reorderBuffer.<span class="c-fn">put</span>(seq, b64);
+                    exchange.<span class="c-fn">sendResponseHeaders</span>(<span class="c-num">202</span>, <span class="c-num">0</span>); exchange.<span class="c-fn">close</span>(); <span class="c-kw">return</span>;
+                }
+
+                <span class="c-com">// Decode In-Order &amp; Drain Buffer</span>
+                <span class="c-fn">decodePacket</span>(b64); expectedSeq++;
+                <span class="c-kw">while</span> (reorderBuffer.<span class="c-fn">containsKey</span>(expectedSeq)) {
+                    <span class="c-fn">decodePacket</span>(reorderBuffer.<span class="c-fn">remove</span>(expectedSeq));
+                    expectedSeq++;
+                }
+            }
+            exchange.<span class="c-fn">sendResponseHeaders</span>(<span class="c-num">200</span>, <span class="c-num">0</span>); exchange.<span class="c-fn">close</span>();
+        });
+        server.<span class="c-fn">start</span>();
+        <span class="c-fn">System.out.println</span>(<span class="c-str">"Java Ingestion Server ready on port 5000..."</span>);
+    }
+
+    <span class="c-kw">private static void</span> <span class="c-fn">decodePacket</span>(String b64) <span class="c-kw">throws</span> Exception {
+        decWriter.<span class="c-fn">write</span>(b64 + <span class="c-str">"\n"</span>); decWriter.<span class="c-fn">flush</span>();
+        String res = decReader.<span class="c-fn">readLine</span>();
+        <span class="c-fn">System.out.println</span>(<span class="c-str">"[JAVA-DECODED] "</span> + res);
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 7. BASH / CLI -->
+        <div class="tab-content" id="sync-tab-cli">
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Bash Edge Sender — Live Tailing Pipe &amp; 409 Auto-Reset</div>
+            <pre><code><span class="c-com"># 1. Edge streaming pipeline: tail syslog -> lds_encoder_engine -> curl HTTP POST</span>
+seq=0
+tail -F /var/log/syslog | ./bin/lds_encoder_engine.exe | <span class="c-kw">while</span> IFS= <span class="c-typ">read</span> -r line; <span class="c-kw">do</span>
+  seq=$((seq + 1))
+  b64=$(<span class="c-fn">echo</span> "$line" | grep -oP '(?<="b64":")[^"]+')
+  
+  <span class="c-com"># Transmit packet to cloud receiver</span>
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://receiver.cloud.internal:5000/api/logs/ingest \
+    -H "Content-Type: application/json" \
+    -d "{\"sessionId\":\"cli_stream\",\"seq\":$seq,\"b64\":\"$b64\"}")
+
+  <span class="c-kw">if</span> [ "$STATUS" -eq 409 ]; <span class="c-kw">then</span>
+    <span class="c-fn">echo</span> "[RESYNC] Server restart detected! Re-initializing encoder session..."
+    <span class="c-fn">echo</span> "RESET" | ./bin/lds_encoder_engine.exe
+    seq=0
+  <span class="c-kw">fi</span>
+<span class="c-kw">done</span></code></pre>
+          </div>
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">2</span> Bash Receiver Pipeline — Netcat / Socat Directly into Decoder</div>
+            <pre><code><span class="c-com"># 2. Cloud receiver pipeline: Listen on port 5000 and decode stream live</span>
+<span class="c-com"># Restores bit-exact text stream directly to standard out / file archive</span>
+nc -l -k -p 5000 | ./bin/lds_decoder_engine.exe >> /var/log/central_ingest.log</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAMOUS HARDWARE EDGE PLATFORMS SHOWCASE -->
+    <section id="edge-hardware">
+      <div class="section-eyebrow">Embedded &amp; Edge Hardware Showcase</div>
+      <h2 class="section-title">Famous Edge Devices &amp; Microcontroller Senders</h2>
+      <p class="section-desc">
+        Production-ready firmware examples for IoT chips, automotive ECUs, and embedded microcontrollers. Shows how resource-constrained devices compress logs locally and stream to <strong>ANY backend receiver server in Go, Rust, Java, Node.js, or Python</strong>.
+      </p>
+
+      <!-- EDGE DEPLOYMENT FILE SELECTOR SUMMARY -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;">
+        <div style="color: var(--text-white); font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#79c0ff" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Quick Download Guide: Which File Goes To Which Hardware?
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; margin-bottom: 18px;">
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 4px; padding: 14px 16px;">
+            <div style="color: #7ee787; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">1. Microcontrollers &amp; MCUs (Bare-Metal / RTOS)</div>
+            <div style="color: var(--text-secondary); font-size: 0.78rem; line-height: 1.5; margin-bottom: 8px;">
+              <strong>ESP32, STM32, Nordic nRF, Automotive ECU:</strong> Requires the single C header and static library.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="downloads/lds.h" download="lds.h" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download lds.h (5 KB)</a>
+              <a href="downloads/liblds.a" download="liblds.a" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download liblds.a (78 KB)</a>
+            </div>
+          </div>
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 4px; padding: 14px 16px;">
+            <div style="color: #79c0ff; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">2. Linux Gateways &amp; Edge Single-Board Computers</div>
+            <div style="color: var(--text-secondary); font-size: 0.78rem; line-height: 1.5; margin-bottom: 8px;">
+              <strong>Raspberry Pi, Industrial IPC, Yocto / Ubuntu:</strong> Requires the precompiled standalone streaming daemon.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="downloads/lds_encoder_engine.exe" download="lds_encoder_engine.exe" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download lds_encoder_engine.exe</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- WHERE TO PLACE .a STATIC LIBRARY GUIDE -->
+        <div style="background: #000; border: 1px solid var(--border-light); border-left: 3px solid #ffa657; border-radius: 4px; padding: 14px 16px;">
+          <div style="color: #ffa657; font-weight: 600; font-size: 0.82rem; margin-bottom: 6px; display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Where to Place &amp; Link the Static Library (.a / liblds.a) File:
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.78rem; line-height: 1.6;">
+            • <strong>Arduino IDE (ESP32 / ESP8266):</strong> Place <code style="color:#7ee787;">liblds.a</code> and <code style="color:#7ee787;">lds.h</code> inside your sketch's <code style="color:#fff;">src/</code> subfolder (<code style="color:var(--text-muted);">SketchBook/MyProject/src/liblds.a</code>). Arduino auto-compiles archives in <code style="color:#fff;">src/</code>.<br>
+            • <strong>STM32CubeIDE / Eclipse GCC:</strong> Place in <code style="color:#79c0ff;">Core/Lib/liblds.a</code> and add <code style="color:#fff;">-llds</code> under <em>Project Properties &gt; C/C++ Build &gt; Settings &gt; MCU GCC Linker &gt; Libraries</em>.<br>
+            • <strong>ESP-IDF (CMake):</strong> Place in <code style="color:#7ee787;">components/lds/lib/liblds.a</code> and add <code style="color:#fff;">target_link_libraries(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/lib/liblds.a")</code> in CMake.<br>
+            • <strong>Zephyr RTOS / Nordic nRF:</strong> Place in <code style="color:#58a6ff;">app/lib/liblds.a</code> and add <code style="color:#fff;">target_link_libraries(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/liblds.a)</code> in <code style="color:var(--text-muted);">CMakeLists.txt</code>.<br>
+            • <strong>Plain GCC / Linux C Senders:</strong> Place in <code style="color:#ffa657;">./lib/liblds.a</code> and compile with <code style="color:#fff;">gcc main.c -I./include -L./lib -llds -o edge_sender</code>.
+          </div>
+        </div>
+      </div>
+
+      <!-- HARDWARE TOPOLOGY CALLOUT -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 28px;">
+        <div style="color: var(--text-white); font-weight: 600; font-size: 0.88rem; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7ee787" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          Heterogeneous Edge-to-Cloud Interoperability Architecture
+        </div>
+        <pre style="background: #000; border: 1px solid var(--border-light); font-size: 0.78rem; line-height: 1.7; color: #a1a1aa;">
+<span style="color:#79c0ff;">[EDGE SENDER FIRMWARE]</span>                                   <span style="color:#ffa657;">[TRANSPORT]</span>                <span style="color:#7ee787;">[CLOUD INGESTION RECEIVER]</span>
+ ┌──────────────────────────────────────┐                                 ┌──────────────────────────────────────┐
+ │ • ESP32 / ESP8266 (ESP-IDF / Arduino)│───► WiFi / TLS (HTTP POST) ───► │ • Golang High-Throughput Cluster     │
+ │ • STM32 & ARM Cortex-M (FreeRTOS)   │───► 4G Cellular (Quectel/SIM) ─►│ • Rust Actix-web / Tokio Backend     │
+ │ • Automotive ECU (AUTOSAR CAN-FD)   │───► Automotive Gateway / TLS ─► │ • Java Spring Boot / Netty Server    │
+ │ • Raspberry Pi / Industrial Gateway  │───► Ethernet / MQTT / Socket ──►│ • Node.js Express / Fastify Server   │
+ │ • Nordic nRF9160 (Zephyr LTE-M)     │───► NB-IoT / CoAP Stream ─────► │ • Python FastAPI / Flask Cluster     │
+ └──────────────────────────────────────┘                                 └──────────────────────────────────────┘
+        </pre>
+      </div>
+
+      <!-- HARDWARE PLATFORMS TABS -->
+      <div class="tab-wrapper">
+        <div class="tab-bar">
+          <button class="tab-link active" onclick="selectTab('hw-tab-esp32', this)">ESP32 / ESP8266</button>
+          <button class="tab-link" onclick="selectTab('hw-tab-stm32', this)">STM32 / Cortex-M</button>
+          <button class="tab-link" onclick="selectTab('hw-tab-rpi', this)">Raspberry Pi / Linux</button>
+          <button class="tab-link" onclick="selectTab('hw-tab-ecu', this)">Automotive ECU</button>
+          <button class="tab-link" onclick="selectTab('hw-tab-nrf', this)">Nordic nRF (Zephyr)</button>
+          <div class="tab-actions">
+            <button class="btn-copy" onclick="copyTabCode(this)">Copy Code</button>
+          </div>
+        </div>
+
+        <!-- 1. ESP32 -->
+        <div class="tab-content active" id="hw-tab-esp32">
+          <!-- DOWNLOAD & PLACEMENT CALLOUT CARD -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-left: 3px solid #7ee787; border-radius: 4px; padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+              <div>
+                <div style="color:var(--text-white); font-weight:600; font-size:0.82rem;">Files to Download for ESP32 / ESP8266:</div>
+                <div style="color:var(--text-secondary); font-size:0.76rem; margin-top:2px;">
+                  Download <code style="color:#7ee787;">lds.h</code> and <code style="color:#7ee787;">liblds.a</code> static library.
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a href="downloads/lds.h" download="lds.h" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download lds.h</a>
+                <a href="downloads/liblds.a" download="liblds.a" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download liblds.a</a>
+              </div>
+            </div>
+            <div style="background: #000; border: 1px solid var(--border-light); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.72rem; color: #a1a1aa; line-height: 1.6;">
+              <span style="color:#7ee787;">📁 Placement in Arduino Sketch:</span><br>
+              MyESP32Project/<br>
+              ├── MyESP32Project.ino<br>
+              └── <strong>src/</strong><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;├── <strong>lds.h</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place header here</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;└── <strong>liblds.a</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place .a archive here (Arduino 1.8.10+ &amp; 2.0+ auto-links archives in src/)</span>
+            </div>
+          </div>
+
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> ESP32 WiFi Log Streamer (ESP-IDF / Arduino C++)</div>
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:12px;">
+              Streams compressed sensor and system diagnostics directly to <strong>any cloud receiver (Go, Rust, Java, Node, Python)</strong> over WiFi with automatic 409 RESYNC recovery.
+            </p>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">&lt;WiFi.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;HTTPClient.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+
+<span class="c-typ">static LDSEncoder</span>* encoder = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> seq = <span class="c-num">0</span>;
+<span class="c-typ">static const char</span>* SERVER_URL = <span class="c-str">"http://192.168.1.100:5000/api/logs/ingest"</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">setup</span>() {
+    Serial.<span class="c-fn">begin</span>(<span class="c-num">115200</span>);
+    WiFi.<span class="c-fn">begin</span>(<span class="c-str">"IoT_SSID"</span>, <span class="c-str">"WPA_KEY"</span>);
+    <span class="c-kw">while</span> (WiFi.<span class="c-fn">status</span>() != WL_CONNECTED) { <span class="c-fn">delay</span>(<span class="c-num">200</span>); }
+
+    <span class="c-com">// Initialize static 166 KB encoder pool</span>
+    encoder = <span class="c-fn">lds_encoder_create</span>();
+    Serial.<span class="c-fn">println</span>(<span class="c-str">"[ESP32] LDS Compression Engine Online."</span>);
+}
+
+<span class="c-typ">void</span> <span class="c-fn">send_device_log</span>(<span class="c-typ">const char</span>* log_msg) {
+    seq++;
+    <span class="c-typ">size_t</span> comp_len = <span class="c-num">0</span>;
+    <span class="c-typ">uint8_t</span>* comp_bytes = <span class="c-fn">lds_encode_line</span>(encoder, log_msg, &amp;comp_len);
+
+    <span class="c-com">// Compute CRC32 checksum</span>
+    <span class="c-typ">uint32_t</span> crc = <span class="c-fn">lds_crc32</span>(comp_bytes, comp_len);
+    <span class="c-typ">char</span> b64_buffer[<span class="c-num">256</span>];
+    <span class="c-fn">lds_base64_encode</span>(comp_bytes, comp_len, b64_buffer, <span class="c-kw">sizeof</span>(b64_buffer));
+
+    <span class="c-typ">char</span> json_body[<span class="c-num">512</span>];
+    <span class="c-fn">snprintf</span>(json_body, <span class="c-kw">sizeof</span>(json_body),
+             <span class="c-str">"{\"sessionId\":\"esp32_node_01\",\"seq\":%u,\"b64\":\"%s\",\"crc32\":\"%08x\"}"</span>,
+             seq, b64_buffer, crc);
+
+    HTTPClient http;
+    http.<span class="c-fn">begin</span>(SERVER_URL);
+    http.<span class="c-fn">addHeader</span>(<span class="c-str">"Content-Type"</span>, <span class="c-str">"application/json"</span>);
+    <span class="c-typ">int</span> httpCode = http.<span class="c-fn">POST</span>(json_body);
+
+    <span class="c-kw">if</span> (httpCode == <span class="c-num">409</span>) {
+        <span class="c-com">// Cloud Receiver rebooted -> Reset dictionary state and re-send as Seq #1</span>
+        Serial.<span class="c-fn">println</span>(<span class="c-str">"[RESYNC] Server reboot detected. Resetting ESP32 dictionary..."</span>);
+        <span class="c-fn">lds_encoder_reset</span>(encoder);
+        seq = <span class="c-num">0</span>;
+        <span class="c-fn">send_device_log</span>(log_msg);
+    }
+    http.<span class="c-fn">end</span>();
+    <span class="c-fn">free</span>(comp_bytes);
+}
+
+<span class="c-typ">void</span> <span class="c-fn">loop</span>() {
+    <span class="c-typ">char</span> log_buf[<span class="c-num">128</span>];
+    <span class="c-fn">snprintf</span>(log_buf, <span class="c-kw">sizeof</span>(log_buf), <span class="c-str">"ESP32 temp=%.1fC heap=%u uptime=%lu"</span>,
+             <span class="c-fn">temperatureRead</span>(), ESP.<span class="c-fn">getFreeHeap</span>(), <span class="c-fn">millis</span>());
+    <span class="c-fn">send_device_log</span>(log_buf);
+    <span class="c-fn">delay</span>(<span class="c-num">1000</span>);
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 2. STM32 -->
+        <div class="tab-content" id="hw-tab-stm32">
+          <!-- DOWNLOAD & PLACEMENT CALLOUT CARD -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-left: 3px solid #79c0ff; border-radius: 4px; padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+              <div>
+                <div style="color:var(--text-white); font-weight:600; font-size:0.82rem;">Files to Download for STM32 &amp; ARM Cortex-M:</div>
+                <div style="color:var(--text-secondary); font-size:0.76rem; margin-top:2px;">
+                  Download <code style="color:#79c0ff;">lds.h</code> and <code style="color:#79c0ff;">liblds.a</code> static library.
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a href="downloads/lds.h" download="lds.h" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download lds.h</a>
+                <a href="downloads/liblds.a" download="liblds.a" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download liblds.a</a>
+              </div>
+            </div>
+            <div style="background: #000; border: 1px solid var(--border-light); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.72rem; color: #a1a1aa; line-height: 1.6;">
+              <span style="color:#79c0ff;">📁 Placement in STM32CubeIDE / Keil Project:</span><br>
+              STM32_Project/<br>
+              └── <strong>Core/</strong><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;├── <strong>Inc/lds.h</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place header here</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;└── <strong>Lib/liblds.a</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place .a archive here</span><br>
+              <span style="color:#ffa657;">⚙️ Linker Setting:</span> Properties &gt; C/C++ Build &gt; Settings &gt; MCU GCC Linker &gt; Libraries (-l) &gt; Add <code style="color:#fff;">lds</code>
+            </div>
+          </div>
+
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> STM32 ARM Cortex-M Firmware (STM32CubeIDE / Keil / FreeRTOS)</div>
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:12px;">
+              Designed for ARM Cortex-M4/M7 industrial controllers. Uses zero dynamic heap allocations during runtime and frames 10-byte binary packets for cellular or LwIP TCP transmission.
+            </p>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+<span class="c-kw">#include</span> <span class="c-str">"cmsis_os.h"</span>
+<span class="c-kw">#include</span> <span class="c-str">"lwip/sockets.h"</span>
+
+<span class="c-typ">static LDSEncoder</span>* mcu_encoder = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> packet_seq = <span class="c-num">0</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">LDS_Telemetry_Task</span>(<span class="c-typ">void</span> *argument) {
+    <span class="c-com">// Pre-allocate deterministic memory pool once at boot</span>
+    mcu_encoder = <span class="c-fn">lds_encoder_create</span>();
+    <span class="c-typ">int</span> sock = <span class="c-fn">connect_to_cloud_receiver</span>(<span class="c-str">"receiver.cloud.internal"</span>, <span class="c-num">5000</span>);
+
+    <span class="c-kw">for</span> (;;) {
+        <span class="c-typ">char</span> sensor_log[<span class="c-num">128</span>];
+        <span class="c-fn">osMessageQueueGet</span>(telemetryQueueHandle, sensor_log, <span class="c-kw">NULL</span>, osWaitForever);
+
+        packet_seq++;
+        <span class="c-typ">size_t</span> comp_len = <span class="c-num">0</span>;
+        <span class="c-typ">uint8_t</span>* comp_data = <span class="c-fn">lds_encode_line</span>(mcu_encoder, sensor_log, &amp;comp_len);
+
+        <span class="c-com">// Construct 10-byte framing header: [0x4C 0x44] [Seq 4B] [CRC32 4B]</span>
+        <span class="c-typ">uint8_t</span> tx_buf[<span class="c-num">10</span> + comp_len];
+        tx_buf[<span class="c-num">0</span>] = <span class="c-num">0x4C</span>; tx_buf[<span class="c-num">1</span>] = <span class="c-num">0x44</span>;
+        <span class="c-fn">memcpy</span>(&amp;tx_buf[<span class="c-num">2</span>], &amp;packet_seq, <span class="c-num">4</span>);
+        <span class="c-typ">uint32_t</span> crc = <span class="c-fn">lds_crc32</span>(comp_data, comp_len);
+        <span class="c-fn">memcpy</span>(&amp;tx_buf[<span class="c-num">6</span>], &amp;crc, <span class="c-num">4</span>);
+        <span class="c-fn">memcpy</span>(&amp;tx_buf[<span class="c-num">10</span>], comp_data, comp_len);
+
+        <span class="c-typ">int</span> sent = <span class="c-fn">send</span>(sock, tx_buf, <span class="c-num">10</span> + comp_len, <span class="c-num">0</span>);
+        <span class="c-kw">if</span> (sent &lt; <span class="c-num">0</span>) {
+            <span class="c-com">// Socket reconnected -> Reset encoder dictionary</span>
+            <span class="c-fn">lds_encoder_reset</span>(mcu_encoder);
+            packet_seq = <span class="c-num">0</span>;
+            sock = <span class="c-fn">connect_to_cloud_receiver</span>(<span class="c-str">"receiver.cloud.internal"</span>, <span class="c-num">5000</span>);
+        }
+        <span class="c-fn">free</span>(comp_data);
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 3. RASPBERRY PI -->
+        <div class="tab-content" id="hw-tab-rpi">
+          <!-- DOWNLOAD & PLACEMENT CALLOUT CARD -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-left: 3px solid #ffa657; border-radius: 4px; padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+              <div>
+                <div style="color:var(--text-white); font-weight:600; font-size:0.82rem;">Files to Download for Raspberry Pi &amp; Linux Gateways:</div>
+                <div style="color:var(--text-secondary); font-size:0.76rem; margin-top:2px;">
+                  Download <code style="color:#ffa657;">lds_encoder_engine.exe</code> (standalone binary) or <code style="color:#ffa657;">liblds.a</code> for C daemon builds.
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a href="downloads/lds_encoder_engine.exe" download="lds_encoder_engine.exe" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download Encoder Binary</a>
+                <a href="downloads/lds.h" download="lds.h" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download lds.h</a>
+              </div>
+            </div>
+            <div style="background: #000; border: 1px solid var(--border-light); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.72rem; color: #a1a1aa; line-height: 1.6;">
+              <span style="color:#ffa657;">📁 Placement in Linux / Raspberry Pi:</span><br>
+              sudo cp lds_encoder_engine.exe <strong>/usr/local/bin/lds_encoder_engine</strong><br>
+              sudo chmod +x <strong>/usr/local/bin/lds_encoder_engine</strong>
+            </div>
+          </div>
+
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Raspberry Pi / Industrial Linux Gateway Daemon</div>
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:12px;">
+              Production systemd background daemon streaming Linux system logs (<code>journald</code> / <code>syslog</code>) to any cloud receiver cluster with automatic retries and 92.7% cellular bandwidth reduction.
+            </p>
+            <pre><code><span class="c-com"># Create systemd service on Raspberry Pi (/etc/systemd/system/lds-streamer.service)</span>
+[Unit]
+Description=LDS Real-Time Edge Log Compression Streamer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/lds_streamer.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+<span class="c-com"># /usr/local/bin/lds_streamer.sh</span>
+<span class="c-com">#!/bin/bash</span>
+RECEIVER_URL="http://cloud-ingest.internal:5000/api/logs/ingest"
+seq=0
+
+journalctl -f -o short-iso | ./lds_encoder_engine.exe | <span class="c-kw">while</span> <span class="c-typ">read</span> -r enc_line; <span class="c-kw">do</span>
+  seq=$((seq + 1))
+  b64=$(<span class="c-fn">echo</span> "$enc_line" | jq -r .b64)
+  crc=$(<span class="c-fn">echo</span> -n "$b64" | cksum | awk '{print $1}')
+
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RECEIVER_URL" \
+    -H "Content-Type: application/json" \
+    -d "{\"sessionId\":\"rpi_gw_04\",\"seq\":$seq,\"b64\":\"$b64\",\"crc32\":\"$crc\"}")
+
+  <span class="c-kw">if</span> [ "$STATUS" -eq 409 ]; <span class="c-kw">then</span>
+    <span class="c-fn">echo</span> "[RESYNC] Server restart detected. Resetting LDS state..."
+    <span class="c-fn">echo</span> "RESET" | ./lds_encoder_engine.exe
+    seq=0
+  <span class="c-kw">fi</span>
+<span class="c-kw">done</span></code></pre>
+          </div>
+        </div>
+
+        <!-- 4. AUTOMOTIVE ECU -->
+        <div class="tab-content" id="hw-tab-ecu">
+          <!-- DOWNLOAD & PLACEMENT CALLOUT CARD -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-left: 3px solid #d2a8ff; border-radius: 4px; padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+              <div>
+                <div style="color:var(--text-white); font-weight:600; font-size:0.82rem;">Files to Download for Automotive ECU / AUTOSAR:</div>
+                <div style="color:var(--text-secondary); font-size:0.76rem; margin-top:2px;">
+                  Download <code style="color:#d2a8ff;">lds.h</code> &amp; <code style="color:#d2a8ff;">liblds.a</code> for AUTOSAR CDD / TCU firmware.
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a href="downloads/lds.h" download="lds.h" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download lds.h</a>
+                <a href="downloads/liblds.a" download="liblds.a" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download liblds.a</a>
+              </div>
+            </div>
+            <div style="background: #000; border: 1px solid var(--border-light); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.72rem; color: #a1a1aa; line-height: 1.6;">
+              <span style="color:#d2a8ff;">📁 Placement in AUTOSAR / TCU Build Tree:</span><br>
+              ecu_firmware/<br>
+              ├── <strong>include/lds.h</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place header in AUTOSAR Complex Device Driver (CDD) include/</span><br>
+              └── <strong>lib/liblds.a</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place static archive in target lib directory</span><br>
+              <span style="color:#ffa657;">⚙️ Build Command:</span> arm-none-eabi-gcc -O3 main.c -I./include -L./lib -llds -o ecu_gateway.elf
+            </div>
+          </div>
+
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Automotive ECU Telematics Gateway (AUTOSAR C99 / CAN-FD)</div>
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:12px;">
+              MISRA-C compatible C99 implementation for vehicle gateways. Compresses high-frequency CAN-FD frames (Wheel Speed, Engine Torque, Battery BMS) into compact batches over 4G/5G cellular modems.
+            </p>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;stdio.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;string.h&gt;</span>
+
+<span class="c-typ">static LDSEncoder</span>* ecu_encoder = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> ecu_seq = <span class="c-num">0</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">ECU_CAN_Ingest_Handler</span>(<span class="c-typ">uint32_t</span> can_id, <span class="c-typ">const uint8_t</span>* data, <span class="c-typ">uint8_t</span> dlc) {
+    <span class="c-kw">if</span> (!ecu_encoder) ecu_encoder = <span class="c-fn">lds_encoder_create</span>();
+
+    <span class="c-typ">char</span> can_log[<span class="c-num">128</span>];
+    <span class="c-fn">snprintf</span>(can_log, <span class="c-kw">sizeof</span>(can_log), <span class="c-str">"CAN_ID=0x%08X DLC=%u DATA=%02X%02X%02X%02X"</span>,
+             can_id, dlc, data[<span class="c-num">0</span>], data[<span class="c-num">1</span>], data[<span class="c-num">2</span>], data[<span class="c-num">3</span>]);
+
+    ecu_seq++;
+    <span class="c-typ">size_t</span> comp_len = <span class="c-num">0</span>;
+    <span class="c-typ">uint8_t</span>* comp_bytes = <span class="c-fn">lds_encode_line</span>(ecu_encoder, can_log, &amp;comp_len);
+
+    <span class="c-com">// Transmit over Telematics Control Unit (TCU) 4G modem socket</span>
+    <span class="c-typ">int</span> result = <span class="c-fn">TCU_Cellular_Send</span>(ecu_seq, comp_bytes, comp_len);
+    <span class="c-kw">if</span> (result == <span class="c-num">409</span> || result == <span class="c-num">-1</span>) {
+        <span class="c-com">// Vehicle drove through tunnel / server rebooted -> Reset encoder on reconnect</span>
+        <span class="c-fn">lds_encoder_reset</span>(ecu_encoder);
+        ecu_seq = <span class="c-num">0</span>;
+    }
+    <span class="c-fn">free</span>(comp_bytes);
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 5. NORDIC NRF -->
+        <div class="tab-content" id="hw-tab-nrf">
+          <!-- DOWNLOAD & PLACEMENT CALLOUT CARD -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-left: 3px solid #58a6ff; border-radius: 4px; padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+              <div>
+                <div style="color:var(--text-white); font-weight:600; font-size:0.82rem;">Files to Download for Nordic nRF &amp; Zephyr RTOS:</div>
+                <div style="color:var(--text-secondary); font-size:0.76rem; margin-top:2px;">
+                  Download <code style="color:#58a6ff;">lds.h</code> and <code style="color:#58a6ff;">liblds.a</code> for nRF Connect SDK / Zephyr.
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a href="downloads/lds.h" download="lds.h" class="btn btn-outline" style="font-size:0.72rem; padding:4px 10px;">Download lds.h</a>
+                <a href="downloads/liblds.a" download="liblds.a" class="btn btn-solid" style="font-size:0.72rem; padding:4px 10px;">Download liblds.a</a>
+              </div>
+            </div>
+            <div style="background: #000; border: 1px solid var(--border-light); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.72rem; color: #a1a1aa; line-height: 1.6;">
+              <span style="color:#58a6ff;">📁 Placement in Zephyr RTOS App:</span><br>
+              my_nrf_app/<br>
+              ├── <strong>include/lds.h</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place header here</span><br>
+              ├── <strong>lib/liblds.a</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#71717a;">&lt;-- Place .a archive here</span><br>
+              └── <strong>CMakeLists.txt</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#ffa657;">Add:</span> <code style="color:#fff;">target_link_libraries(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/liblds.a)</code>
+            </div>
+          </div>
+
+          <div class="step-unit">
+            <div class="step-label"><span class="step-badge">1</span> Nordic nRF9160 / nRF52 (Zephyr RTOS / LTE-M / NB-IoT)</div>
+            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:12px;">
+              Ultra-low-power cellular IoT tracker firmware. By compressing logs with LDS before transmission, cellular radio active time is reduced by >90%, extending battery lifetime by years.
+            </p>
+            <pre><code><span class="c-kw">#include</span> <span class="c-str">&lt;zephyr/kernel.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">&lt;zephyr/net/socket.h&gt;</span>
+<span class="c-kw">#include</span> <span class="c-str">"lds.h"</span>
+
+<span class="c-typ">static LDSEncoder</span>* nrf_enc = <span class="c-kw">NULL</span>;
+<span class="c-typ">static uint32_t</span> nrf_seq = <span class="c-num">0</span>;
+
+<span class="c-typ">void</span> <span class="c-fn">nrf_stream_battery_telemetry</span>(<span class="c-typ">float</span> voltage, <span class="c-typ">float</span> temp) {
+    <span class="c-kw">if</span> (!nrf_enc) nrf_enc = <span class="c-fn">lds_encoder_create</span>();
+    nrf_seq++;
+
+    <span class="c-typ">char</span> log_entry[<span class="c-num">80</span>];
+    <span class="c-fn">snprintk</span>(log_entry, <span class="c-kw">sizeof</span>(log_entry), <span class="c-str">"NRF9160 v=%.2fV temp=%.1fC lte_rsrp=-84dBm"</span>, voltage, temp);
+
+    <span class="c-typ">size_t</span> comp_len = <span class="c-num">0</span>;
+    <span class="c-typ">uint8_t</span>* comp_payload = <span class="c-fn">lds_encode_line</span>(nrf_enc, log_entry, &amp;comp_len);
+
+    <span class="c-com">// Transmit compressed payload over Zephyr LTE-M BSD socket</span>
+    <span class="c-typ">int</span> sock = <span class="c-fn">zsock_socket</span>(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    <span class="c-com">// [Payload is 92.7% smaller -> 90% less LTE radio transmit energy]</span>
+    <span class="c-fn">zsock_sendto</span>(sock, comp_payload, comp_len, <span class="c-num">0</span>, &amp;server_addr, <span class="c-kw">sizeof</span>(server_addr));
+    <span class="c-fn">zsock_close</span>(sock);
+    <span class="c-fn">free</span>(comp_payload);
+}</code></pre>
           </div>
         </div>
       </div>

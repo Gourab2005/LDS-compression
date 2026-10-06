@@ -19,7 +19,8 @@ def get_engine_path():
     candidates = [
         os.path.join(base_dir, "..", "..", "..", "bin", "lds_encoder_engine.exe"),
         os.path.join(base_dir, "..", "..", "..", "bin", "lds_encoder_engine"),
-        os.path.join(base_dir, "..", "public_html", "downloads", "lds_encoder_engine.exe"),
+        os.path.join(base_dir, "..", "..", "..", "docs", "downloads", "lds_encoder_engine.exe"),
+        os.path.join(base_dir, "..", "..", "..", "docs", "downloads", "lds_encoder_engine"),
     ]
     for c in candidates:
         if os.path.exists(c):
