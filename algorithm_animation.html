@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDS Compression Algorithm — Interactive Animation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#111827;--bg3:#1e293b;
+  --surface:rgba(30,41,59,.65);--surface2:rgba(51,65,85,.45);
+  --border:rgba(100,116,139,.25);--border-bright:rgba(129,140,248,.4);
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --accent:#818cf8;--accent2:#a78bfa;--accent3:#c084fc;
+  --green:#34d399;--green2:#10b981;--green-bg:rgba(52,211,153,.12);
+  --blue:#60a5fa;--blue2:#3b82f6;--blue-bg:rgba(96,165,250,.12);
+  --orange:#fb923c;--orange2:#f97316;--orange-bg:rgba(251,146,60,.12);
+  --red:#f87171;--red-bg:rgba(248,113,113,.12);
+  --cyan:#22d3ee;--pink:#f472b6;--yellow:#fbbf24;
+  --radius:12px;--radius-sm:8px;--radius-xs:4px;
+}
+html{font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(129,140,248,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(52,211,153,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Layout */
+.app{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:16px 20px 40px}
+
+/* Header */
+.header{text-align:center;margin-bottom:20px}
+.header h1{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent3),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+.header p{color:var(--text2);font-size:.85rem;margin-top:4px}
+
+/* Controls */
+.controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.btn{font-family:'Inter',sans-serif;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);background:rgba(129,140,248,.12);transform:translateY(-1px)}
+.btn.active{background:rgba(129,140,248,.2);border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff}
+.btn.primary:hover{opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.speed-label{color:var(--text2);font-size:.75rem;font-weight:500}
+.log-counter{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;color:var(--text2);font-size:.75rem;font-weight:600}
+.log-counter span{color:var(--accent)}
+
+/* Progress bar */
+.progress-wrap{width:100%;max-width:600px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:2px;transition:width .4s ease;width:0}
+
+/* Current log display */
+.current-log-wrap{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;margin-bottom:16px;position:relative;overflow:hidden}
+.current-log-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent3),var(--green));opacity:0;transition:opacity .3s}
+.current-log-wrap.active::before{opacity:1}
+.current-log-label{font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:6px}
+.current-log{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--text);word-break:break-all;min-height:1.3em}
+.current-log .tok-int{color:var(--blue);font-weight:600}
+.current-log .tok-str{color:var(--green);font-weight:600}
+.current-log .tok-lit{color:var(--text2)}
+
+/* Main grid */
+.main-grid{display:grid;grid-template-columns:1fr 100px 1fr;gap:0;align-items:start}
+
+/* Device panels */
+.device{background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.device-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.device-icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.device-icon.edge{background:linear-gradient(135deg,var(--orange-bg),rgba(251,146,60,.25));border:1px solid rgba(251,146,60,.3)}
+.device-icon.cloud{background:linear-gradient(135deg,var(--green-bg),rgba(52,211,153,.25));border:1px solid rgba(52,211,153,.3)}
+.device-title{font-weight:700;font-size:.85rem}
+.device-sub{font-size:.65rem;color:var(--text3);font-weight:500}
+.device-body{padding:12px}
+
+/* Pipeline stages */
+.stage{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden;transition:all .4s ease;opacity:.5}
+.stage.active{opacity:1;border-color:var(--border-bright);box-shadow:0 0 20px rgba(129,140,248,.08)}
+.stage.done{opacity:.85;border-color:rgba(52,211,153,.3)}
+.stage-head{padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:default}
+.stage-num{width:22px;height:22px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:var(--text3);transition:all .3s;flex-shrink:0}
+.stage.active .stage-num{background:var(--accent);color:#fff}
+.stage.done .stage-num{background:var(--green2);color:#fff}
+.stage-info{flex:1;min-width:0}
+.stage-name{font-weight:700;font-size:.75rem}
+.stage-file{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);font-weight:500}
+.stage-status{font-size:.6rem;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--text3);transition:all .3s}
+.stage.active .stage-status{background:rgba(129,140,248,.15);color:var(--accent)}
+.stage.done .stage-status{background:rgba(52,211,153,.12);color:var(--green)}
+.stage-body{padding:0 12px 10px;font-size:.72rem;color:var(--text2);display:none;animation:fadeSlide .3s ease}
+.stage.active .stage-body,.stage.done .stage-body{display:block}
+
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Stage detail elements */
+.detail-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;line-height:1.5}
+.detail-label{color:var(--text3);font-weight:600;white-space:nowrap;min-width:60px}
+.detail-value{font-family:'JetBrains Mono',monospace;font-size:.68rem;word-break:break-all}
+.detail-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:6px 8px;margin-top:4px;margin-bottom:4px;font-family:'JetBrains Mono',monospace;font-size:.65rem;line-height:1.6;overflow-x:auto;white-space:pre-wrap}
+
+/* Token chip */
+.tok-chip{display:inline-block;padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:600;margin:1px}
+.tok-chip.int{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.tok-chip.str{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.tok-chip.lit{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+
+/* Prediction table */
+.pred-table{width:100%;border-collapse:collapse;margin:4px 0;font-size:.62rem}
+.pred-table th{text-align:left;padding:3px 5px;color:var(--text3);font-weight:700;border-bottom:1px solid var(--border);font-size:.6rem;text-transform:uppercase;letter-spacing:.5px}
+.pred-table td{padding:3px 5px;border-bottom:1px solid rgba(100,116,139,.1);font-family:'JetBrains Mono',monospace;font-size:.62rem}
+.pred-table .hit{color:var(--green);font-weight:700}
+.pred-table .miss{color:var(--orange);font-weight:700}
+
+/* Network area */
+.network-area{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;position:relative;min-height:300px}
+.network-line{width:2px;flex:1;background:linear-gradient(180deg,var(--border) 0%,var(--accent) 50%,var(--border) 100%);opacity:.3;position:relative}
+.packet-anim{position:absolute;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,var(--accent),transparent);opacity:0;left:50%;transform:translateX(-50%);pointer-events:none;z-index:2}
+.packet-anim.flying{animation:packetFly 1.2s ease-in-out forwards}
+@keyframes packetFly{
+  0%{top:10%;opacity:0;transform:translateX(-50%) scale(.3)}
+  20%{opacity:1;transform:translateX(-50%) scale(1)}
+  80%{opacity:1;transform:translateX(-50%) scale(1)}
+  100%{top:85%;opacity:0;transform:translateX(-50%) scale(.3)}
+}
+.network-label{writing-mode:vertical-lr;font-size:.6rem;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:8px 0}
+.packet-info{background:var(--bg2);border:1px solid var(--border-bright);border-radius:var(--radius-xs);padding:6px 10px;text-align:center;font-size:.65rem;transition:all .4s;opacity:0;transform:scale(.9)}
+.packet-info.show{opacity:1;transform:scale(1)}
+.packet-info .size{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);font-size:.8rem}
+.packet-info .ratio{color:var(--green);font-weight:700;font-size:.7rem}
+
+/* Summary bar */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:18px}
+.stat-card{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;text-align:center;transition:all .3s}
+.stat-card:hover{border-color:var(--border-bright);transform:translateY(-2px)}
+.stat-val{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:.65rem;color:var(--text3);font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* Log console */
+.console-wrap{margin-top:18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.console-header{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.console-dot{width:8px;height:8px;border-radius:50%}
+.console-dot.r{background:#f87171}.console-dot.y{background:#fbbf24}.console-dot.g{background:#34d399}
+.console-title{font-size:.7rem;font-weight:600;color:var(--text3);margin-left:6px}
+.console-body{padding:10px 14px;max-height:200px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.65rem;line-height:1.7;color:var(--text2)}
+.console-body .log-line{margin-bottom:2px;display:flex;gap:6px}
+.console-body .log-ts{color:var(--text3);flex-shrink:0}
+.console-body .log-tag{font-weight:700;flex-shrink:0}
+.console-body .log-tag.info{color:var(--blue)}
+.console-body .log-tag.success{color:var(--green)}
+.console-body .log-tag.warn{color:var(--orange)}
+.console-body .log-tag.special{color:var(--accent)}
+.console-body .log-msg{color:var(--text2)}
+
+/* Responsive */
+@media(max-width:1000px){
+  .main-grid{grid-template-columns:1fr;gap:12px}
+  .network-area{flex-direction:row;min-height:auto;padding:10px 0}
+  .network-line{height:2px;width:auto;flex:1}
+  .network-label{writing-mode:horizontal-tb}
+}
+
+/* Pulse animation */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(129,140,248,.3)}50%{box-shadow:0 0 12px 4px rgba(129,140,248,.15)}}
+.stage.active{animation:pulse 2s infinite}
+
+/* Typing cursor */
+.cursor-blink{display:inline-block;width:2px;height:1em;background:var(--accent);animation:blink 1s infinite;vertical-align:text-bottom;margin-left:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Match highlight */
+.match-highlight{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:3px;padding:0 3px}
+.template-highlight{background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:3px;padding:0 3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1>⚡ LDS Algorithm — Live Processing Animation</h1>
+    <p>Watch how the Log Data Stream engine compresses & decompresses logs in real-time</p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+    <button class="btn" id="btnStep" onclick="stepForward()">⏭ Step</button>
+    <button class="btn" id="btnReset" onclick="resetAll()">↺ Reset</button>
+    <span class="speed-label">Speed:</span>
+    <button class="btn" onclick="setSpeed(0.5)">0.5×</button>
+    <button class="btn active" id="sp1" onclick="setSpeed(1)">1×</button>
+    <button class="btn" onclick="setSpeed(2)">2×</button>
+    <div class="log-counter">Log <span id="logIdx">0</span> / <span>5</span></div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <!-- Current log line -->
+  <div class="current-log-wrap" id="currentLogWrap">
+    <div class="current-log-label">📥 Current Input Log Line</div>
+    <div class="current-log" id="currentLogText">Waiting to start...</div>
+  </div>
+
+  <!-- Main Grid: Edge Device | Network | Cloud Server -->
+  <div class="main-grid">
+    <!-- EDGE DEVICE -->
+    <div class="device">
+      <div class="device-header">
+        <div class="device-icon edge">📡</div>
+        <div>
+          <div class="device-title">Edge Device — Encoder</div>
+          <div class="device-sub">~166 KB RAM • Automotive ECU / IoT Gateway</div>
+        </div>
+      </div>
+      <div class="device-body">
+        <!-- Stage 1 -->
+        <div class="stage" id="enc-s1">
+          <div class="stage-head">
+            <div class="stage-num">1</div>
+            <div class="stage-info">
+              <div class="stage-name">Streaming Tokenizer</div>
+              <div class="stage-file">miner.c → lexLine()</div>
+            </div>
+            <div class="stage-status" id="enc-s1-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="enc-s1-body"></div>
+        </div>
+        <!-- Stage 2 -->
+        <div class="stage" id="enc-s2">
+          <div class="stage-head">
+            <div class="stage-num">2</div>
+            <div class="stage-info">
+              <div class="stage-name">Template Matcher</div>
+              <div class="stage-file">encoder.c → MRU + Prefix Hash</div>
+            </div>
+            <div class="stage-status" id="enc-s2-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="enc-s2-body"></div>
+        </div>
+        <!-- Stage 3 -->
+        <div class="stage" id="enc-s3">
+          <div class="stage-head">
+            <div class="stage-num">3</div>
+            <div class="stage-info">
+              <div class="stage-name">Predictive Modeler</div>
+              <div class="stage-file">model.c + utils.c → Delta-Stride / Dict</div>
+            </div>
+            <div class="stage-status" id="enc-s3-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="enc-s3-body"></div>
+        </div>
+        <!-- Stage 4 -->
+        <div class="stage" id="enc-s4">
+          <div class="stage-head">
+            <div class="stage-num">4</div>
+            <div class="stage-info">
+              <div class="stage-name">Range Coder</div>
+              <div class="stage-file">wire.c → Adaptive Arithmetic Coder</div>
+            </div>
+            <div class="stage-status" id="enc-s4-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="enc-s4-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NETWORK -->
+    <div class="network-area">
+      <div class="network-label">N E T W O R K</div>
+      <div class="network-line" id="networkLine">
+        <div class="packet-anim" id="packetAnim"></div>
+      </div>
+      <div class="packet-info" id="packetInfo">
+        <div>Packet</div>
+        <div class="size" id="pktSize">—</div>
+        <div class="ratio" id="pktRatio">—</div>
+      </div>
+    </div>
+
+    <!-- CLOUD SERVER -->
+    <div class="device">
+      <div class="device-header">
+        <div class="device-icon cloud">☁️</div>
+        <div>
+          <div class="device-title">Cloud Server — Decoder</div>
+          <div class="device-sub">decoder.c • Ingestion Pipeline</div>
+        </div>
+      </div>
+      <div class="device-body">
+        <!-- Decode Stage 1 -->
+        <div class="stage" id="dec-s1">
+          <div class="stage-head">
+            <div class="stage-num">1</div>
+            <div class="stage-info">
+              <div class="stage-name">Opcode & Template Lookup</div>
+              <div class="stage-file">decoder.c → readOp() + lookupTpl()</div>
+            </div>
+            <div class="stage-status" id="dec-s1-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="dec-s1-body"></div>
+        </div>
+        <!-- Decode Stage 2 -->
+        <div class="stage" id="dec-s2">
+          <div class="stage-head">
+            <div class="stage-num">2</div>
+            <div class="stage-info">
+              <div class="stage-name">Variable Reconstruction</div>
+              <div class="stage-file">model.c → predInt() / predStr() + residuals</div>
+            </div>
+            <div class="stage-status" id="dec-s2-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="dec-s2-body"></div>
+        </div>
+        <!-- Decode Stage 3 -->
+        <div class="stage" id="dec-s3">
+          <div class="stage-head">
+            <div class="stage-num">3</div>
+            <div class="stage-info">
+              <div class="stage-name">Line Reconstruction</div>
+              <div class="stage-file">renderLine() → Template + Values</div>
+            </div>
+            <div class="stage-status" id="dec-s3-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="dec-s3-body"></div>
+        </div>
+        <!-- Verification -->
+        <div class="stage" id="dec-s4">
+          <div class="stage-head">
+            <div class="stage-num">✓</div>
+            <div class="stage-info">
+              <div class="stage-name">Lossless Verification</div>
+              <div class="stage-file">strcmp(original, decoded) == 0</div>
+            </div>
+            <div class="stage-status" id="dec-s4-status">IDLE</div>
+          </div>
+          <div class="stage-body" id="dec-s4-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="stat-card"><div class="stat-val" id="statLines">0</div><div class="stat-label">Lines Processed</div></div>
+    <div class="stat-card"><div class="stat-val" id="statRaw">0 B</div><div class="stat-label">Raw Input</div></div>
+    <div class="stat-card"><div class="stat-val" id="statComp">0 B</div><div class="stat-label">Compressed</div></div>
+    <div class="stat-card"><div class="stat-val" id="statRatio">—</div><div class="stat-label">Compression Ratio</div></div>
+    <div class="stat-card"><div class="stat-val" id="statSaved">0%</div><div class="stat-label">Bandwidth Saved</div></div>
+    <div class="stat-card"><div class="stat-val" id="statTemplates">0</div><div class="stat-label">Templates Learned</div></div>
+  </div>
+
+  <!-- Console -->
+  <div class="console-wrap">
+    <div class="console-header">
+      <div class="console-dot r"></div><div class="console-dot y"></div><div class="console-dot g"></div>
+      <div class="console-title">Processing Log</div>
+    </div>
+    <div class="console-body" id="consoleBody"></div>
+  </div>
+</div>
+
+<script>
+// ============= DATA =============
+const LOGS = [
+  "2026-10-05 14:32:10 INFO [Worker-12] Processed 1040 records in 40ms",
+  "2026-10-05 14:32:11 INFO [Worker-12] Processed 1045 records in 41ms",
+  "2026-10-05 14:32:12 INFO [Worker-12] Processed 1050 records in 42ms",
+  "2026-10-05 14:32:13 WARN [Worker-08] Timeout after 3200ms retry=2",
+  "2026-10-05 14:32:14 INFO [Worker-12] Processed 1055 records in 39ms",
+];
+
+// Pre-computed token data for each log
+const TOKEN_DATA = [
+  { tokens:[{v:"2026",f:1},{v:"-",f:0},{v:"10",f:1},{v:"-",f:0},{v:"05",f:1},{v:" ",f:0},{v:"14",f:1},{v:":",f:0},{v:"32",f:1},{v:":",f:0},{v:"10",f:1},{v:" ",f:0},{v:"INFO",f:0},{v:" ",f:0},{v:"[",f:0},{v:"Worker",f:0},{v:"-",f:0},{v:"12",f:1},{v:"]",f:0},{v:" ",f:0},{v:"Processed",f:0},{v:" ",f:0},{v:"1040",f:1},{v:" ",f:0},{v:"records",f:0},{v:" ",f:0},{v:"in",f:0},{v:" ",f:0},{v:"40",f:1},{v:"ms",f:0}] },
+  { tokens:[{v:"2026",f:1},{v:"-",f:0},{v:"10",f:1},{v:"-",f:0},{v:"05",f:1},{v:" ",f:0},{v:"14",f:1},{v:":",f:0},{v:"32",f:1},{v:":",f:0},{v:"11",f:1},{v:" ",f:0},{v:"INFO",f:0},{v:" ",f:0},{v:"[",f:0},{v:"Worker",f:0},{v:"-",f:0},{v:"12",f:1},{v:"]",f:0},{v:" ",f:0},{v:"Processed",f:0},{v:" ",f:0},{v:"1045",f:1},{v:" ",f:0},{v:"records",f:0},{v:" ",f:0},{v:"in",f:0},{v:" ",f:0},{v:"41",f:1},{v:"ms",f:0}] },
+  { tokens:[{v:"2026",f:1},{v:"-",f:0},{v:"10",f:1},{v:"-",f:0},{v:"05",f:1},{v:" ",f:0},{v:"14",f:1},{v:":",f:0},{v:"32",f:1},{v:":",f:0},{v:"12",f:1},{v:" ",f:0},{v:"INFO",f:0},{v:" ",f:0},{v:"[",f:0},{v:"Worker",f:0},{v:"-",f:0},{v:"12",f:1},{v:"]",f:0},{v:" ",f:0},{v:"Processed",f:0},{v:" ",f:0},{v:"1050",f:1},{v:" ",f:0},{v:"records",f:0},{v:" ",f:0},{v:"in",f:0},{v:" ",f:0},{v:"42",f:1},{v:"ms",f:0}] },
+  { tokens:[{v:"2026",f:1},{v:"-",f:0},{v:"10",f:1},{v:"-",f:0},{v:"05",f:1},{v:" ",f:0},{v:"14",f:1},{v:":",f:0},{v:"32",f:1},{v:":",f:0},{v:"13",f:1},{v:" ",f:0},{v:"WARN",f:0},{v:" ",f:0},{v:"[",f:0},{v:"Worker",f:0},{v:"-",f:0},{v:"08",f:1},{v:"]",f:0},{v:" ",f:0},{v:"Timeout",f:0},{v:" ",f:0},{v:"after",f:0},{v:" ",f:0},{v:"3200",f:1},{v:"ms",f:0},{v:" ",f:0},{v:"retry",f:0},{v:"=",f:0},{v:"2",f:1}] },
+  { tokens:[{v:"2026",f:1},{v:"-",f:0},{v:"10",f:1},{v:"-",f:0},{v:"05",f:1},{v:" ",f:0},{v:"14",f:1},{v:":",f:0},{v:"32",f:1},{v:":",f:0},{v:"14",f:1},{v:" ",f:0},{v:"INFO",f:0},{v:" ",f:0},{v:"[",f:0},{v:"Worker",f:0},{v:"-",f:0},{v:"12",f:1},{v:"]",f:0},{v:" ",f:0},{v:"Processed",f:0},{v:" ",f:0},{v:"1055",f:1},{v:" ",f:0},{v:"records",f:0},{v:" ",f:0},{v:"in",f:0},{v:" ",f:0},{v:"39",f:1},{v:"ms",f:0}] },
+];
+
+// Template info per log
+const TEMPLATE_INFO = [
+  { tid: 0, tpl: "<*>-<*>-<*> <*>:<*>:<*> INFO [Worker-<*>] Processed <*> records in <*>ms", kinds: "ddddddddd", isNew: true, mruHit: false, hashHit: false, opcode: "OP_SYNC", name:"Template #0 (Worker logs)" },
+  { tid: 0, tpl: "<*>-<*>-<*> <*>:<*>:<*> INFO [Worker-<*>] Processed <*> records in <*>ms", kinds: "ddddddddd", isNew: false, mruHit: true, hashHit: false, opcode: "OP_DATA", name:"Template #0" },
+  { tid: 0, tpl: "<*>-<*>-<*> <*>:<*>:<*> INFO [Worker-<*>] Processed <*> records in <*>ms", kinds: "ddddddddd", isNew: false, mruHit: true, hashHit: false, opcode: "OP_DATA", name:"Template #0" },
+  { tid: 1, tpl: "<*>-<*>-<*> <*>:<*>:<*> WARN [Worker-<*>] Timeout after <*>ms retry=<*>", kinds: "ddddddddd", isNew: true, mruHit: false, hashHit: false, opcode: "OP_SYNC", name:"Template #1 (Timeout logs)" },
+  { tid: 0, tpl: "<*>-<*>-<*> <*>:<*>:<*> INFO [Worker-<*>] Processed <*> records in <*>ms", kinds: "ddddddddd", isNew: false, mruHit: false, hashHit: true, opcode: "OP_DATA", name:"Template #0" },
+];
+
+// Prediction data per log (numeric slot predictions)
+const PRED_DATA = [
+  { slots:[
+    {name:"Year",    cur:2026,prev:null,delta:null,predicted:null,residual:null,bits:12},
+    {name:"Month",   cur:10,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Day",     cur:5,   prev:null,delta:null,predicted:null,residual:null,bits:4},
+    {name:"Hour",    cur:14,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Min",     cur:32,  prev:null,delta:null,predicted:null,residual:null,bits:6},
+    {name:"Sec",     cur:10,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Worker",  cur:12,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Records", cur:1040,prev:null,delta:null,predicted:null,residual:null,bits:11},
+    {name:"Duration",cur:40,  prev:null,delta:null,predicted:null,residual:null,bits:7},
+  ], totalBits: 60, note:"First line — no predictions yet, all values sent in full" },
+  { slots:[
+    {name:"Year",    cur:2026,prev:2026,delta:0,  predicted:2026,residual:0,bits:1},
+    {name:"Month",   cur:10,  prev:10,  delta:0,  predicted:10,  residual:0,bits:1},
+    {name:"Day",     cur:5,   prev:5,   delta:0,  predicted:5,   residual:0,bits:1},
+    {name:"Hour",    cur:14,  prev:14,  delta:0,  predicted:14,  residual:0,bits:1},
+    {name:"Min",     cur:32,  prev:32,  delta:0,  predicted:32,  residual:0,bits:1},
+    {name:"Sec",     cur:11,  prev:10,  delta:1,  predicted:10,  residual:1,bits:4},
+    {name:"Worker",  cur:12,  prev:12,  delta:0,  predicted:12,  residual:0,bits:1},
+    {name:"Records", cur:1045,prev:1040,delta:5,  predicted:1040,residual:5,bits:5},
+    {name:"Duration",cur:41,  prev:40,  delta:1,  predicted:40,  residual:1,bits:4},
+  ], totalBits: 19, note:"Deltas being learned — 6 of 9 slots predicted perfectly (1 bit each)" },
+  { slots:[
+    {name:"Year",    cur:2026,prev:2026,delta:0,predicted:2026,residual:0,bits:1},
+    {name:"Month",   cur:10,  prev:10,  delta:0,predicted:10,  residual:0,bits:1},
+    {name:"Day",     cur:5,   prev:5,   delta:0,predicted:5,   residual:0,bits:1},
+    {name:"Hour",    cur:14,  prev:14,  delta:0,predicted:14,  residual:0,bits:1},
+    {name:"Min",     cur:32,  prev:32,  delta:0,predicted:32,  residual:0,bits:1},
+    {name:"Sec",     cur:12,  prev:11,  delta:1,predicted:12,  residual:0,bits:1},
+    {name:"Worker",  cur:12,  prev:12,  delta:0,predicted:12,  residual:0,bits:1},
+    {name:"Records", cur:1050,prev:1045,delta:5,predicted:1050,residual:0,bits:1},
+    {name:"Duration",cur:42,  prev:41,  delta:1,predicted:42,  residual:0,bits:1},
+  ], totalBits: 9, note:"🎯 ALL 9 slots predicted perfectly! Each costs only 1 bit!" },
+  { slots:[
+    {name:"Year",    cur:2026,prev:null,delta:null,predicted:null,residual:null,bits:12},
+    {name:"Month",   cur:10,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Day",     cur:5,   prev:null,delta:null,predicted:null,residual:null,bits:4},
+    {name:"Hour",    cur:14,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Min",     cur:32,  prev:null,delta:null,predicted:null,residual:null,bits:6},
+    {name:"Sec",     cur:13,  prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Worker",  cur:8,   prev:null,delta:null,predicted:null,residual:null,bits:5},
+    {name:"Timeout", cur:3200,prev:null,delta:null,predicted:null,residual:null,bits:12},
+    {name:"Retry",   cur:2,   prev:null,delta:null,predicted:null,residual:null,bits:3},
+  ], totalBits: 57, note:"New template — no predictions, all values sent in full" },
+  { slots:[
+    {name:"Year",    cur:2026,prev:2026,delta:0,predicted:2026,residual:0,bits:1},
+    {name:"Month",   cur:10,  prev:10,  delta:0,predicted:10,  residual:0,bits:1},
+    {name:"Day",     cur:5,   prev:5,   delta:0,predicted:5,   residual:0,bits:1},
+    {name:"Hour",    cur:14,  prev:14,  delta:0,predicted:14,  residual:0,bits:1},
+    {name:"Min",     cur:32,  prev:32,  delta:0,predicted:32,  residual:0,bits:1},
+    {name:"Sec",     cur:14,  prev:12,  delta:1,predicted:13,  residual:1,bits:4},
+    {name:"Worker",  cur:12,  prev:12,  delta:0,predicted:12,  residual:0,bits:1},
+    {name:"Records", cur:1055,prev:1050,delta:5,predicted:1055,residual:0,bits:1},
+    {name:"Duration",cur:39,  prev:42,  delta:1,predicted:43,  residual:-4,bits:5},
+  ], totalBits: 16, note:"Back to Template #0 — most slots still predict well from saved state" },
+];
+
+// Compressed sizes (simulated realistic)
+const COMPRESSED = [38, 8, 5, 35, 7];
+
+// ============= STATE =============
+let currentLog = -1;
+let currentStep = -1; // sub-step within a log
+let isPlaying = false;
+let playTimer = null;
+let speedMul = 1;
+let totalRaw = 0;
+let totalComp = 0;
+let templatesLearned = 0;
+
+const STEPS_PER_LOG = 9; // enc-s1, enc-s2, enc-s3, enc-s4, network, dec-s1, dec-s2, dec-s3, dec-s4
+const BASE_DELAY = 1200;
+
+// ============= HELPERS =============
+function $(id){ return document.getElementById(id) }
+function delay(ms){ return new Promise(r=>setTimeout(r, ms/speedMul)) }
+
+function logConsole(tag, tagClass, msg){
+  const el = $('consoleBody');
+  const ts = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="log-tag ${tagClass}">[${tag}]</span> <span class="log-msg">${msg}</span>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStage(id, state, statusText){
+  const el = $(id);
+  el.classList.remove('active','done');
+  if(state) el.classList.add(state);
+  const s = $(id+'-status');
+  if(s) s.textContent = statusText||'IDLE';
+}
+
+function setStageBody(id, html){
+  const el = $(id+'-body');
+  if(el) el.innerHTML = html;
+}
+
+function renderTokenChips(tokens){
+  return tokens.map(t=>{
+    if(t.f===1) return `<span class="tok-chip int">${esc(t.v)}</span>`;
+    if(t.f===2) return `<span class="tok-chip str">${esc(t.v)}</span>`;
+    const display = t.v===' '?'⎵':esc(t.v);
+    return `<span class="tok-chip lit">${display}</span>`;
+  }).join('');
+}
+
+function renderHighlightedLog(log, tokens){
+  return tokens.map(t=>{
+    if(t.f===1) return `<span class="tok-int">${esc(t.v)}</span>`;
+    if(t.f===2) return `<span class="tok-str">${esc(t.v)}</span>`;
+    return `<span class="tok-lit">${esc(t.v)}</span>`;
+  }).join('');
+}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+function renderPredTable(slots){
+  let rows = slots.map(s=>{
+    const isHit = s.residual===0 && s.prev!==null;
+    const cls = s.prev===null ? '' : (isHit ? 'hit' : 'miss');
+    return `<tr>
+      <td>${s.name}</td>
+      <td>${s.prev !== null ? s.prev : '—'}</td>
+      <td>${s.delta !== null ? (s.delta>=0?'+':'')+s.delta : '—'}</td>
+      <td>${s.predicted !== null ? s.predicted : '—'}</td>
+      <td><b>${s.cur}</b></td>
+      <td class="${cls}">${s.prev!==null ? (isHit?'0 ✓':(s.residual>=0?'+':'')+s.residual) : 'N/A'}</td>
+      <td class="${cls}">${s.bits} bit${s.bits>1?'s':''}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="pred-table">
+    <tr><th>Slot</th><th>Prev</th><th>Delta</th><th>Predicted</th><th>Actual</th><th>Residual</th><th>Cost</th></tr>
+    ${rows}
+  </table>`;
+}
+
+function updateStats(){
+  $('statLines').textContent = currentLog+1;
+  $('statRaw').textContent = totalRaw+' B';
+  $('statComp').textContent = totalComp+' B';
+  if(totalComp>0){
+    const ratio = (totalRaw/totalComp).toFixed(1);
+    $('statRatio').textContent = ratio+'x';
+    $('statSaved').textContent = ((1-totalComp/totalRaw)*100).toFixed(1)+'%';
+  }
+  $('statTemplates').textContent = templatesLearned;
+}
+
+function updateProgress(){
+  if(currentLog<0){ $('progressBar').style.width='0%'; return }
+  const total = LOGS.length * STEPS_PER_LOG;
+  const done = currentLog * STEPS_PER_LOG + currentStep + 1;
+  $('progressBar').style.width = (done/total*100)+'%';
+}
+
+function clearAllStages(){
+  ['enc-s1','enc-s2','enc-s3','enc-s4','dec-s1','dec-s2','dec-s3','dec-s4'].forEach(id=>{
+    setStage(id, null, 'IDLE');
+    setStageBody(id, '');
+  });
+  $('packetInfo').classList.remove('show');
+  $('currentLogWrap').classList.remove('active');
+}
+
+// ============= ANIMATION STEPS =============
+
+async function processLog(logIdx){
+  currentLog = logIdx;
+  $('logIdx').textContent = logIdx+1;
+
+  const log = LOGS[logIdx];
+  const tokData = TOKEN_DATA[logIdx];
+  const tplInfo = TEMPLATE_INFO[logIdx];
+  const predInfo = PRED_DATA[logIdx];
+  const compSize = COMPRESSED[logIdx];
+  const rawSize = log.length;
+
+  clearAllStages();
+
+  // --- Show input ---
+  currentStep = -1;
+  $('currentLogWrap').classList.add('active');
+  $('currentLogText').innerHTML = renderHighlightedLog(log, tokData.tokens);
+  logConsole('INPUT','info',`Line ${logIdx+1}: "${esc(log)}"`);
+  logConsole('INFO','info',`Raw size: ${rawSize} bytes`);
+  await delay(BASE_DELAY * 0.5);
+
+  // --- STEP 0: Encoder Stage 1 — Tokenizer ---
+  currentStep = 0; updateProgress();
+  setStage('enc-s1','active','SCANNING');
+  logConsole('MINER','special','miner.c → lexLine(): scanning left-to-right...');
+
+  const numTokens = tokData.tokens.filter(t=>t.f===1).length;
+  const litTokens = tokData.tokens.filter(t=>t.f===0).length;
+  const strTokens = tokData.tokens.filter(t=>t.f===2).length;
+
+  setStageBody('enc-s1', `
+    <div class="detail-row"><span class="detail-label">Scanning:</span> <span class="detail-value">Single-pass character classification (zero-regex)</span></div>
+    <div class="detail-row"><span class="detail-label">Found:</span> <span class="detail-value">${tokData.tokens.length} tokens — ${numTokens} integers, ${litTokens} literals${strTokens>0?', '+strTokens+' strings':''}</span></div>
+    <div class="detail-box">${renderTokenChips(tokData.tokens)}</div>
+    <div class="detail-row"><span class="detail-label">Legend:</span>
+      <span class="tok-chip int">int (flag=1)</span>
+      <span class="tok-chip lit">literal (flag=0)</span>
+      ${strTokens>0?'<span class="tok-chip str">string (flag=2)</span>':''}
+    </div>
+  `);
+  await delay(BASE_DELAY);
+  setStage('enc-s1','done','DONE');
+  logConsole('MINER','success',`Tokenized: ${numTokens} integers, ${litTokens} literals extracted`);
+
+  // --- STEP 1: Encoder Stage 2 — Template Matcher ---
+  currentStep = 1; updateProgress();
+  setStage('enc-s2','active','MATCHING');
+
+  let matchHtml = '';
+  if(tplInfo.isNew){
+    templatesLearned++;
+    matchHtml = `
+      <div class="detail-row"><span class="detail-label">MRU[0]:</span> <span class="detail-value miss" style="color:var(--orange)">MISS — No previous template</span></div>
+      <div class="detail-row"><span class="detail-label">Hash Tbl:</span> <span class="detail-value miss" style="color:var(--orange)">MISS — No matching prefix</span></div>
+      <div class="detail-row"><span class="detail-label">Action:</span> <span class="detail-value" style="color:var(--cyan)">🆕 Mining NEW template via mergeEl() (LCS alignment)</span></div>
+      <div class="detail-row"><span class="detail-label">Template:</span> <span class="detail-value template-highlight">${esc(tplInfo.tpl)}</span></div>
+      <div class="detail-row"><span class="detail-label">Kinds:</span> <span class="detail-value">${tplInfo.kinds.split('').map(k=>`<span class="tok-chip int">${k}</span>`).join('')}</span></div>
+      <div class="detail-row"><span class="detail-label">TID:</span> <span class="detail-value" style="color:var(--accent);font-weight:700">#${tplInfo.tid}</span></div>
+      <div class="detail-row"><span class="detail-label">Opcode:</span> <span class="detail-value" style="color:var(--yellow);font-weight:700">${tplInfo.opcode}</span> — Full template definition sent to decoder</div>
+    `;
+    logConsole('ENCODER','warn',`No match → Mining new template → ${tplInfo.name}`);
+    logConsole('ENCODER','special',`Opcode: ${tplInfo.opcode} — teaching decoder the template structure`);
+  } else if(tplInfo.mruHit){
+    matchHtml = `
+      <div class="detail-row"><span class="detail-label">MRU[0]:</span> <span class="detail-value match-highlight" style="color:var(--green);font-weight:700">✅ HIT — Same template as last line!</span></div>
+      <div class="detail-row"><span class="detail-label">Template:</span> <span class="detail-value template-highlight">${esc(tplInfo.tpl)}</span></div>
+      <div class="detail-row"><span class="detail-label">TID:</span> <span class="detail-value" style="color:var(--accent);font-weight:700">#${tplInfo.tid} — encoded with 1-bit MRU flag</span></div>
+      <div class="detail-row"><span class="detail-label">Opcode:</span> <span class="detail-value" style="color:var(--green);font-weight:700">${tplInfo.opcode}</span> — Only variable values needed</div>
+    `;
+    logConsole('ENCODER','success',`MRU[0] HIT → ${tplInfo.name} — O(1) instant match!`);
+  } else if(tplInfo.hashHit){
+    matchHtml = `
+      <div class="detail-row"><span class="detail-label">MRU[0]:</span> <span class="detail-value" style="color:var(--orange)">MISS — Different from last template (was #1)</span></div>
+      <div class="detail-row"><span class="detail-label">Hash Tbl:</span> <span class="detail-value match-highlight" style="color:var(--green);font-weight:700">✅ HIT — Prefix "2026-10-" matched bucket → TID #${tplInfo.tid}</span></div>
+      <div class="detail-row"><span class="detail-label">Template:</span> <span class="detail-value template-highlight">${esc(tplInfo.tpl)}</span></div>
+      <div class="detail-row"><span class="detail-label">Opcode:</span> <span class="detail-value" style="color:var(--green);font-weight:700">${tplInfo.opcode}</span></div>
+    `;
+    logConsole('ENCODER','warn','MRU[0] MISS (last was Template #1)');
+    logConsole('ENCODER','success',`Hash table HIT → ${tplInfo.name} recovered via prefix index`);
+  }
+  setStageBody('enc-s2', matchHtml);
+  await delay(BASE_DELAY);
+  setStage('enc-s2','done','DONE');
+
+  // --- STEP 2: Encoder Stage 3 — Predictor ---
+  currentStep = 2; updateProgress();
+  setStage('enc-s3','active','PREDICTING');
+
+  const hits = predInfo.slots.filter(s=>s.residual===0 && s.prev!==null).length;
+  const total = predInfo.slots.length;
+
+  setStageBody('enc-s3', `
+    <div class="detail-row"><span class="detail-label">Method:</span> <span class="detail-value">Second-order Delta-Stride prediction per slot</span></div>
+    <div class="detail-row"><span class="detail-label">Formula:</span> <span class="detail-value">predicted = prev + prev_delta → residual = actual - predicted</span></div>
+    <div class="detail-row"><span class="detail-label">Result:</span> <span class="detail-value" style="color:${hits===total && total>0?'var(--green)':'var(--text)'};font-weight:700">${predInfo.slots[0].prev!==null ? `${hits}/${total} predictions hit (residual=0 → 1 bit each)` : 'No history yet — all values sent raw'}</span></div>
+    ${renderPredTable(predInfo.slots)}
+    <div class="detail-row" style="margin-top:4px"><span class="detail-label">Total:</span> <span class="detail-value" style="font-weight:700;color:var(--accent)">${predInfo.totalBits} bits (${Math.ceil(predInfo.totalBits/8)} bytes) for all ${total} variables</span></div>
+    <div class="detail-row"><span class="detail-label">Note:</span> <span class="detail-value" style="color:var(--text3)">${predInfo.note}</span></div>
+  `);
+  logConsole('MODEL','special',`model.c → ${predInfo.slots[0].prev!==null?`${hits}/${total} prediction hits`:'First occurrence — learning baselines'} → ${predInfo.totalBits} bits total`);
+  await delay(BASE_DELAY * 1.2);
+  setStage('enc-s3','done','DONE');
+
+  // --- STEP 3: Encoder Stage 4 — Range Coder ---
+  currentStep = 3; updateProgress();
+  setStage('enc-s4','active','ENCODING');
+
+  const bitsBreakdown = `Opcode(2) + TID(${tplInfo.isNew?'~80':'8'}) + Variables(${predInfo.totalBits})${tplInfo.isNew?' + Template definition(~'+(compSize*8-predInfo.totalBits-82)+')':''}`;
+  setStageBody('enc-s4', `
+    <div class="detail-row"><span class="detail-label">Coder:</span> <span class="detail-value">Adaptive binary arithmetic range coder with multi-context probabilities</span></div>
+    <div class="detail-row"><span class="detail-label">Contexts:</span> <span class="detail-value">Separate probability tables for hit/miss, residual sign, magnitude</span></div>
+    <div class="detail-row"><span class="detail-label">Bits:</span> <span class="detail-value">${bitsBreakdown}</span></div>
+    <div class="detail-box" style="text-align:center;font-size:.8rem">
+      <span style="color:var(--text3)">${rawSize} bytes</span> → <span style="color:var(--accent);font-weight:800">${compSize} bytes</span>
+      <span style="color:var(--green);font-weight:700"> (${(rawSize/compSize).toFixed(1)}x compression)</span>
+    </div>
+  `);
+  logConsole('WIRE','success',`wire.c → Range-coded: ${rawSize}B → ${compSize}B (${(rawSize/compSize).toFixed(1)}x)`);
+  await delay(BASE_DELAY * 0.8);
+  setStage('enc-s4','done','DONE');
+
+  // --- STEP 4: Network Transfer ---
+  currentStep = 4; updateProgress();
+  $('packetInfo').classList.add('show');
+  $('pktSize').textContent = compSize + ' bytes';
+  $('pktRatio').textContent = (rawSize/compSize).toFixed(1) + 'x smaller';
+
+  const pkt = $('packetAnim');
+  pkt.classList.remove('flying');
+  void pkt.offsetWidth;
+  pkt.classList.add('flying');
+  logConsole('NET','info',`📡 Transmitting ${compSize}-byte packet over network...`);
+  await delay(BASE_DELAY * 1.2);
+
+  // --- STEP 5: Decoder Stage 1 — Opcode & Template Lookup ---
+  currentStep = 5; updateProgress();
+  setStage('dec-s1','active','READING');
+
+  let decS1Html = `
+    <div class="detail-row"><span class="detail-label">Opcode:</span> <span class="detail-value" style="font-weight:700;color:${tplInfo.isNew?'var(--yellow)':'var(--green)'}">${tplInfo.opcode}</span></div>
+  `;
+  if(tplInfo.isNew){
+    decS1Html += `
+      <div class="detail-row"><span class="detail-label">Action:</span> <span class="detail-value" style="color:var(--cyan)">📥 Learning new template from sync packet</span></div>
+      <div class="detail-row"><span class="detail-label">Template:</span> <span class="detail-value template-highlight">${esc(tplInfo.tpl)}</span></div>
+      <div class="detail-row"><span class="detail-label">Stored as:</span> <span class="detail-value">TID #${tplInfo.tid} in decoder template table</span></div>
+    `;
+    logConsole('DECODER','special',`OP_SYNC received → Learning ${tplInfo.name}`);
+  } else {
+    decS1Html += `
+      <div class="detail-row"><span class="detail-label">TID:</span> <span class="detail-value" style="font-weight:700;color:var(--accent)">#${tplInfo.tid}</span></div>
+      <div class="detail-row"><span class="detail-label">Lookup:</span> <span class="detail-value match-highlight">Found template in local table</span></div>
+      <div class="detail-row"><span class="detail-label">Template:</span> <span class="detail-value">${esc(tplInfo.tpl)}</span></div>
+    `;
+    logConsole('DECODER','info',`OP_DATA → Template #${tplInfo.tid} found in table`);
+  }
+  setStageBody('dec-s1', decS1Html);
+  await delay(BASE_DELAY * 0.8);
+  setStage('dec-s1','done','DONE');
+
+  // --- STEP 6: Decoder Stage 2 — Variable Reconstruction ---
+  currentStep = 6; updateProgress();
+  setStage('dec-s2','active','DECODING');
+
+  let recon = predInfo.slots.map(s=>{
+    if(s.prev===null) return `<b>${s.name}</b>: raw decode → <span style="color:var(--blue)">${s.cur}</span>`;
+    if(s.residual===0) return `<b>${s.name}</b>: predicted(${s.predicted}) + residual(0) = <span style="color:var(--green)">${s.cur} ✓</span>`;
+    return `<b>${s.name}</b>: predicted(${s.predicted}) + residual(${s.residual>=0?'+':''}${s.residual}) = <span style="color:var(--orange)">${s.cur}</span>`;
+  }).join('<br>');
+
+  setStageBody('dec-s2', `
+    <div class="detail-row"><span class="detail-label">Process:</span> <span class="detail-value">For each slot: read prediction bit → if 0: use prediction, if 1: read & add residual</span></div>
+    <div class="detail-box">${recon}</div>
+  `);
+  logConsole('DECODER','special','model.c → Reconstructing variables from predictions + residuals');
+  await delay(BASE_DELAY);
+  setStage('dec-s2','done','DONE');
+
+  // --- STEP 7: Decoder Stage 3 — Line Reconstruction ---
+  currentStep = 7; updateProgress();
+  setStage('dec-s3','active','RENDERING');
+
+  setStageBody('dec-s3', `
+    <div class="detail-row"><span class="detail-label">Method:</span> <span class="detail-value">renderLine(): interleave template literals with decoded variable values</span></div>
+    <div class="detail-box" style="color:var(--green)">${esc(log)}</div>
+  `);
+  logConsole('DECODER','success',`renderLine() → "${esc(log)}"`);
+  await delay(BASE_DELAY * 0.6);
+  setStage('dec-s3','done','DONE');
+
+  // --- STEP 8: Verification ---
+  currentStep = 8; updateProgress();
+  setStage('dec-s4','active','VERIFYING');
+
+  setStageBody('dec-s4', `
+    <div class="detail-box" style="text-align:center;border-color:rgba(52,211,153,.4)">
+      <div style="color:var(--green);font-weight:800;font-size:.9rem;margin-bottom:4px">✅ PASS — 100% Bit-Exact Match</div>
+      <div style="color:var(--text3)">strcmp(original, decoded) == <span style="color:var(--green);font-weight:700">0</span></div>
+      <div style="margin-top:6px;color:var(--text2)">Original: ${rawSize} bytes → Compressed: ${compSize} bytes → Decoded: ${rawSize} bytes</div>
+      <div style="color:var(--accent);font-weight:700;margin-top:4px">${(rawSize/compSize).toFixed(1)}x compression • ${((1-compSize/rawSize)*100).toFixed(1)}% bandwidth saved</div>
+    </div>
+  `);
+
+  totalRaw += rawSize;
+  totalComp += compSize;
+  updateStats();
+  logConsole('VERIFY','success',`✅ Line ${logIdx+1} PASS — ${rawSize}B → ${compSize}B (${(rawSize/compSize).toFixed(1)}x)`);
+  await delay(BASE_DELAY * 0.5);
+  setStage('dec-s4','done','PASS ✓');
+}
+
+// ============= PLAYBACK CONTROL =============
+
+async function playAll(){
+  const startFrom = currentLog < 0 ? 0 : (currentLog + 1 >= LOGS.length ? 0 : currentLog + 1);
+  if(startFrom === 0){ resetAll(); await delay(200) }
+
+  isPlaying = true;
+  $('btnPlay').textContent = '⏸ Pause';
+  $('btnPlay').classList.add('active');
+  $('btnStep').disabled = true;
+
+  for(let i = startFrom; i < LOGS.length; i++){
+    if(!isPlaying) break;
+    await processLog(i);
+    if(i < LOGS.length - 1 && isPlaying) await delay(BASE_DELAY * 0.8);
+  }
+
+  isPlaying = false;
+  $('btnPlay').textContent = '▶ Play';
+  $('btnPlay').classList.remove('active');
+  $('btnStep').disabled = false;
+
+  if(currentLog >= LOGS.length - 1){
+    logConsole('DONE','success','═══════════════════════════════════════════════════');
+    logConsole('DONE','success',`All ${LOGS.length} lines processed! Total: ${totalRaw}B → ${totalComp}B (${(totalRaw/totalComp).toFixed(1)}x)`);
+  }
+}
+
+function togglePlay(){
+  if(isPlaying){
+    isPlaying = false;
+    $('btnPlay').textContent = '▶ Play';
+    $('btnPlay').classList.remove('active');
+    $('btnStep').disabled = false;
+  } else {
+    playAll();
+  }
+}
+
+async function stepForward(){
+  if(isPlaying) return;
+  const next = currentLog + 1 >= LOGS.length ? 0 : currentLog + 1;
+  if(next === 0 && currentLog >= 0) resetAll();
+  await processLog(next);
+}
+
+function resetAll(){
+  isPlaying = false;
+  currentLog = -1;
+  currentStep = -1;
+  totalRaw = 0;
+  totalComp = 0;
+  templatesLearned = 0;
+  clearAllStages();
+  $('currentLogText').textContent = 'Waiting to start...';
+  $('logIdx').textContent = '0';
+  $('progressBar').style.width = '0%';
+  $('consoleBody').innerHTML = '';
+  $('btnPlay').textContent = '▶ Play';
+  $('btnPlay').classList.remove('active');
+  $('btnStep').disabled = false;
+  updateStats();
+  logConsole('SYS','info','System reset. Ready to process logs.');
+}
+
+function setSpeed(s){
+  speedMul = s;
+  document.querySelectorAll('.controls .btn').forEach(b=>{
+    if(b.textContent.includes('×')) b.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  logConsole('SYS','info',`Speed set to ${s}×`);
+}
+
+// Init
+logConsole('SYS','info','LDS Algorithm Animation loaded. Press ▶ Play or ⏭ Step to begin.');
+logConsole('SYS','info',`${LOGS.length} log lines queued for processing.`);
+</script>
+</body>
+</html>
